@@ -101,7 +101,7 @@
 .overlay .panel p { font-weight: 700; color: rgba(246,239,221,.85); max-width: 34ch; }
 
 /* floating layer hosts popovers + overlays above the canvas */
-.fx-layer { position: fixed; inset: 0; z-index: 30; pointer-events: none; }
+.fx-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100svh; z-index: 30; pointer-events: none; }
 .fx-layer > * { pointer-events: auto; }
 
 /* per-defender upgrade/sell popover */
