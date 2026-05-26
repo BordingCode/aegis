@@ -101,12 +101,9 @@
 .overlay .panel p { font-weight: 700; color: rgba(246,239,221,.85); max-width: 34ch; }
 
 /* floating layer hosts popovers + overlays above the canvas */
-.fx-layer { position: fixed; inset: 0; z-index: 30; pointer-events: none; }
-.fx-layer > * { pointer-events: auto; }
-
 /* per-defender upgrade/sell popover */
 .def-menu {
-  position: fixed; transform: translate(-50%, -100%);
+  position: fixed; z-index: 15; transform: translate(-50%, -100%);
   display: flex; gap: 6px; align-items: center;
   background: rgba(13,38,62,.96); border: 2px solid var(--gold-d);
   border-radius: 14px; padding: 6px; box-shadow: var(--shadow);

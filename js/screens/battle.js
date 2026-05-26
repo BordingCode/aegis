@@ -177,7 +177,7 @@ export function renderBattle(opts = {}) {
     items.push(el('button.btn.btn-ghost', { onclick: () => { world.sell(d); closeMenu(); selectedDefender = null; } }, `Sell +${refund}`));
     items.push(el('button.btn.btn-ghost', { onclick: () => { closeMenu(); selectedDefender = null; } }, '✕'));
     menuEl = el('div.def-menu', {}, items);
-    document.getElementById('fx-layer').append(menuEl);
+    s.append(menuEl);
     const p = worldToScreen(d.x, d.y - 56); menuEl.style.left = p.left + 'px'; menuEl.style.top = p.top + 'px';
   }
   function closeMenu() { if (menuEl) { menuEl.remove(); menuEl = null; } }
@@ -210,7 +210,7 @@ export function renderBattle(opts = {}) {
       el('button.btn.btn-primary', { onclick: togglePause }, 'Resume'),
       el('button.btn.btn-ghost', { onclick: () => { cleanup(); go('hub'); } }, 'Quit to hub'),
     ])]);
-    document.getElementById('fx-layer').append(overlay);
+    s.append(overlay);
   }
   function endBattle(kind) {
     if (ended) return; ended = true; loop.pause(); closeMenu(); selectedDefender = null; hideInfo();
@@ -232,7 +232,7 @@ export function renderBattle(opts = {}) {
         el('button.btn.btn-ghost', { dataset: { testid: 'btn-retry' }, onclick: () => { cleanup(); renderBattle({ level }); } }, 'Retry'),
       ]),
     ])]);
-    document.getElementById('fx-layer').append(overlay);
+    s.append(overlay);
     syncDebug({ status: world.status });
   }
 
