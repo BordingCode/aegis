@@ -42,28 +42,11 @@ function stub(name) {
   mount(s);
 }
 
-// Drive layout height from the real visible viewport. CRITICAL: only write the
-// CSS var when the height ACTUALLY changes, and debounce resize — re-setting it
-// every scroll/frame re-rasterizes the full-screen fixed layer and causes
-// flickering white bands + twitch on some devices.
-let _lastH = 0, _fitT = 0;
-function measureViewport() {
-  const h = Math.round(window.innerHeight);
-  if (h && h !== _lastH) { _lastH = h; document.documentElement.style.setProperty('--app-h', h + 'px'); }
-}
-function scheduleFit() { clearTimeout(_fitT); _fitT = setTimeout(measureViewport, 150); }
-measureViewport();
-window.addEventListener('resize', scheduleFit);
-window.addEventListener('orientationchange', scheduleFit);
-
 async function boot() {
-  measureViewport();
   Game.meta = loadMeta();
   await loadArtManifest();
   go('title');
   hideSplash();
-  // reveal the app only after the splash has cleared (avoids a double-logo cross-fade)
-  setTimeout(() => document.getElementById('app').classList.add('ready'), 420);
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }

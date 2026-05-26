@@ -49,16 +49,9 @@ html, body {
   touch-action: manipulation;
 }
 
-/* Size to the SMALL viewport (svh) so the mobile address bar/toolbar can't overlay
-   the top or push the bottom off-screen, and toolbar show/hide can't make it jump.
-   inset:0 would tie height to the large viewport — the cause of the twitch. */
-#app, .app {
-  position: fixed; top: 0; left: 0; width: 100%;
-  height: 100vh;                  /* fallback before JS runs */
-  height: var(--app-h, 100svh);   /* JS sets --app-h to the real visible height */
-  opacity: 0; transition: opacity .35s ease;
-}
-#app.ready { opacity: 1; }
+/* Dead-simple, stable full-screen container. No dynamic height, no opacity layer,
+   no compositing tricks — those caused flickering bands on some mobile GPUs. */
+#app, .app { position: fixed; inset: 0; }
 
 .screen {
   position: absolute; inset: 0;
@@ -124,7 +117,7 @@ html, body {
   position: fixed; inset: 0; z-index: 100;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 10px;
-  background: radial-gradient(120% 120% at 50% 30%, var(--bg2), var(--bg));
+  background: var(--bg);
   transition: opacity .35s ease;
 }
 .splash.hide { opacity: 0; pointer-events: none; }
