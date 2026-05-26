@@ -1,1 +1,12 @@
-[]
+[
+"backgrounds/act1.webp",
+"defenders/oracle.webp",
+"defenders/shrine.webp",
+"defenders/toxotes.webp",
+"enemies/harpy.webp",
+"enemies/minotaur.webp",
+"enemies/shade.webp",
+"enemies/skeleton.webp",
+"ui/title.webp",
+"units/hoplite.webp"
+]

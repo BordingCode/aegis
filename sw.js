@@ -1,5 +1,5 @@
 /* Aegis service worker — network-first (fresh code online, full offline fallback). */
-const CACHE = 'aegis-v15';
+const CACHE = 'aegis-v16';
 const SHELL = [
   './',
   'index.html',
@@ -39,7 +39,19 @@ const SHELL = [
   'js/data/upgrades.js',
   'js/data/levels.js',
   'assets/manifest.json',
+  'assets/backgrounds/act1.webp',
+  'assets/ui/title.webp',
+  'assets/defenders/shrine.webp',
+  'assets/defenders/toxotes.webp',
+  'assets/defenders/oracle.webp',
+  'assets/units/hoplite.webp',
+  'assets/enemies/shade.webp',
+  'assets/enemies/skeleton.webp',
+  'assets/enemies/harpy.webp',
+  'assets/enemies/minotaur.webp',
   'icons/favicon.svg',
+  'icons/icon-192.png',
+  'icons/icon-512.png',
 ];
 
 self.addEventListener('install', (e) => {

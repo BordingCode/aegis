@@ -16,6 +16,9 @@ export async function loadArtManifest() {
 
 export const hasArt = (src) => manifest.has(src);
 
+// Manifest keys are relative to assets/; the real request needs that prefix.
+const url = (src) => 'assets/' + src;
+
 /** Wrapper showing `fallbackNode`, swapped for <img src> if the asset exists. */
 export function artOrFallback(src, fallbackNode, cls = '') {
   const wrap = el('div.art' + (cls ? '.' + cls : ''));
@@ -25,7 +28,7 @@ export function artOrFallback(src, fallbackNode, cls = '') {
     img.alt = '';
     img.onload = () => { img.className = 'art-img'; wrap.replaceChildren(img); };
     img.onerror = () => {};
-    img.src = src;
+    img.src = url(src);
   }
   return wrap;
 }
@@ -34,8 +37,8 @@ export function artOrFallback(src, fallbackNode, cls = '') {
 export function bgImage(elm, src) {
   if (!elm || !src || !manifest.has(src)) return;
   const img = new Image();
-  img.onload = () => { elm.style.backgroundImage = `url("${src}")`; elm.classList.add('has-bg'); };
-  img.src = src;
+  img.onload = () => { elm.style.backgroundImage = `url("${url(src)}")`; elm.classList.add('has-bg'); };
+  img.src = url(src);
 }
 
 /** Load an <img> sprite for canvas drawing if the asset exists, else null.
@@ -46,7 +49,7 @@ export function sprite(src) {
   if (_spriteCache.has(src)) return _spriteCache.get(src);
   const img = new Image();
   img.decoding = 'async';
-  img.src = src;
+  img.src = url(src);
   _spriteCache.set(src, img);
   return img;
 }
