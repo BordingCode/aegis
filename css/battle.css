@@ -97,3 +97,19 @@
 .overlay .panel h2 { font-family: var(--font-display); font-size: 30px; }
 .overlay .panel.win h2 { color: var(--gold); }
 .overlay .panel.lose h2 { color: var(--terra); }
+.overlay .panel .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.overlay .panel p { font-weight: 700; color: rgba(246,239,221,.85); max-width: 34ch; }
+
+/* floating layer hosts popovers + overlays above the canvas */
+.fx-layer { position: fixed; inset: 0; z-index: 30; pointer-events: none; }
+.fx-layer > * { pointer-events: auto; }
+
+/* per-defender upgrade/sell popover */
+.def-menu {
+  position: fixed; transform: translate(-50%, -100%);
+  display: flex; gap: 6px; align-items: center;
+  background: rgba(13,38,62,.96); border: 2px solid var(--gold-d);
+  border-radius: 14px; padding: 6px; box-shadow: var(--shadow);
+}
+.def-menu .btn { padding: 8px 12px; min-height: 38px; font-size: 14px; box-shadow: 0 3px 0 rgba(0,0,0,.3); }
+.def-menu .menu-max { padding: 0 10px; font-weight: 900; color: var(--gold); }

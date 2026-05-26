@@ -1,5 +1,5 @@
 /* Aegis service worker — network-first (fresh code online, full offline fallback). */
-const CACHE = 'aegis-v1';
+const CACHE = 'aegis-v2';
 const SHELL = [
   './',
   'index.html',
@@ -15,6 +15,23 @@ const SHELL = [
   'js/save.js',
   'js/icons.js',
   'js/screens/title.js',
+  'js/screens/battle.js',
+  'js/engine/vec.js',
+  'js/engine/pool.js',
+  'js/engine/canvas.js',
+  'js/engine/loop.js',
+  'js/engine/render.js',
+  'js/engine/input.js',
+  'js/battle/path.js',
+  'js/battle/favor.js',
+  'js/battle/enemies.js',
+  'js/battle/defenders.js',
+  'js/battle/projectiles.js',
+  'js/battle/spawner.js',
+  'js/battle/world.js',
+  'js/data/enemies.js',
+  'js/data/defenders.js',
+  'js/data/levels.js',
   'assets/manifest.json',
   'icons/favicon.svg',
 ];

@@ -5,10 +5,12 @@ import { loadArtManifest } from './art.js';
 import { loadMeta } from './save.js';
 import { mount, screen, el, hideSplash } from './ui.js';
 import { renderTitle } from './screens/title.js';
+import { renderBattle } from './screens/battle.js';
 
 // Screen registry. Filled in as milestones land; unknown names show a stub.
 const ROUTES = {
   title: renderTitle,
+  battle: renderBattle,
 };
 
 /** Lazily register a screen renderer (so later modules can plug in). */
