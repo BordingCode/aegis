@@ -47,35 +47,32 @@
   font-size: 12px;
 }
 
-/* ---------- hub & how-to ---------- */
-.screen.hub, .screen.howto {
-  overflow: hidden; gap: 10px;            /* the screen never scrolls — only the inner list does */
-  background: #102844;                    /* flat (gradients on a big fixed layer can band/flicker) */
-}
-/* the scrolling middle band; min-height:0 is required for a flex child to scroll */
-.hub-scroll, .howto-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
-.hub-header, .hub-sub, .howto-head { flex: 0 0 auto; }
-.hub-header, .howto-head { display: flex; align-items: center; gap: 12px; }
-.hub-header h1, .howto-head h1 { font-family: var(--font-display); font-size: clamp(22px, 4vw, 32px); flex: 1; }
+/* ---------- hub (clean-sheet: plain block flow, fully opaque, no compositing) ---------- */
+.screen.hub { display: block; background: #0e2238; min-height: 100vh; min-height: 100svh; }
+.hub-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+.hub-bar h1 { font-family: var(--font-display); font-size: clamp(20px, 4vw, 30px); flex: 1; }
 .btn-back { padding: 8px 14px; min-height: 40px; }
-.coin-pill.big { font-size: 18px; padding: 8px 14px; }
-.hub-sub { color: rgba(246,239,221,.7); font-weight: 700; margin-top: -4px; }
+.drachma { display: inline-flex; align-items: center; gap: 6px; background: #3a2f12; color: var(--gold); border: 2px solid var(--gold-d); border-radius: 999px; padding: 6px 14px; font-weight: 900; }
+.hub-sub { color: #b9b29e; font-weight: 700; margin: 0 0 12px; }
 
-.upgrade-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(216px, 1fr)); gap: 8px; }
-.upgrade-card { display: flex; align-items: center; gap: 9px; background: rgba(13,38,62,.7); border: 2px solid rgba(255,255,255,.12); border-radius: 12px; padding: 8px 10px; min-width: 0; }
-.upgrade-card.is-owned { border-color: var(--gold-d); background: rgba(60,48,16,.5); }
-.upgrade-card .glyph { color: var(--gold); flex: 0 0 auto; }
-.upgrade-card .up-text { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.15; }
-.upgrade-card .up-text b { font-size: 13px; }
-.upgrade-card .up-text span { font-size: 11px; color: rgba(246,239,221,.75); font-weight: 700; }
-.upgrade-card .buy { padding: 7px 10px; min-height: 34px; font-size: 13px; flex: 0 0 auto; }
-.upgrade-card .owned { color: var(--gold); font-weight: 900; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.up-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.up-card { display: flex; align-items: center; gap: 9px; background: #16395e; border-radius: 10px; padding: 9px 11px; min-width: 0; }
+.up-card.is-owned { background: #3a3214; }
+.up-card .glyph { color: var(--gold); flex: 0 0 auto; }
+.up-card .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.15; }
+.up-card .txt b { font-size: 13px; }
+.up-card .txt span { font-size: 11px; color: #c9c2ad; font-weight: 700; }
+.up-card .buy { flex: 0 0 auto; background: #e0b048; color: #3a2a07; border: none; border-radius: 8px; padding: 8px 12px; min-height: 34px; font-weight: 900; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+.up-card .buy:disabled { background: #45413a; color: #8c8870; cursor: not-allowed; }
+.up-card .owned { color: var(--gold); font-weight: 900; font-size: 12px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+.hub-actions { display: flex; gap: 12px; justify-content: flex-end; align-items: center; margin-top: 16px; }
 
-.hub-footer { flex: 0 0 auto; display: flex; gap: 12px; justify-content: flex-end; align-items: center; padding-top: 4px; }
-
-.howto-list { display: flex; flex-direction: column; gap: 10px; padding-right: 4px; }
-.screen.howto > .btn-primary { flex: 0 0 auto; }
-.howto-row { display: flex; gap: 12px; align-items: flex-start; background: rgba(13,38,62,.6); border: 2px solid rgba(255,255,255,.1); border-radius: 12px; padding: 10px 12px; }
+/* ---------- how-to ---------- */
+.screen.howto { display: block; background: #0e2238; min-height: 100vh; min-height: 100svh; }
+.howto-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.howto-head h1 { font-family: var(--font-display); font-size: clamp(20px, 4vw, 30px); flex: 1; }
+.howto-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.howto-row { display: flex; gap: 12px; align-items: flex-start; background: #16395e; border-radius: 10px; padding: 10px 12px; }
 .howto-row .glyph { color: var(--gold); flex: 0 0 auto; margin-top: 2px; }
 .howto-row b { display: block; font-size: 15px; }
-.howto-row span { font-size: 13px; color: rgba(246,239,221,.8); font-weight: 700; }
+.howto-row span { font-size: 13px; color: #c9c2ad; font-weight: 700; }
