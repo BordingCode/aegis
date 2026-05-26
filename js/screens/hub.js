@@ -60,7 +60,7 @@ export function renderHub() {
     el('button.btn.btn-primary.btn-lg', { dataset: { testid: 'btn-begin' }, onclick: begin }, 'Begin the Defense'),
   ]);
 
-  s.append(header, el('p.hub-sub', {}, 'Spend Drachma on permanent blessings, then hold the gate.'), grid, footer);
+  s.append(header, el('p.hub-sub', {}, 'Spend Drachma on permanent blessings, then hold the gate.'), el('div.hub-scroll', {}, [grid]), footer);
   refreshAfford();
   return mount(s);
 }
