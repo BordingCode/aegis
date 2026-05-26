@@ -130,6 +130,7 @@ export function renderWorld(view, world, opts = {}) {
 
   // defenders
   for (const d of world.defenders) {
+    if (d.dead) continue;
     if (d.fireFlash > 0) { ctx.beginPath(); ctx.arc(d.x, d.y - 24, 26, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,210,.35)'; ctx.fill(); }
     drawEntity(ctx, d.x, d.y, 50, d.art, d.emoji, false, d.color);
     if (d.maxHp) drawHpBar(ctx, d.x, d.y - 46, 36, Math.max(0, d.hp / d.maxHp), true);
@@ -138,12 +139,14 @@ export function renderWorld(view, world, opts = {}) {
 
   // mobile troops (face right)
   for (const u of world.units) {
+    if (u.dead) continue;
     drawEntity(ctx, u.x, u.y, 48, u.art, u.emoji, false, u.color);
     drawHpBar(ctx, u.x, u.y - 44, 34, Math.max(0, u.hp / u.maxHp), true);
   }
 
   // enemies (face left)
   for (const e of world.enemies) {
+    if (e.dead) continue;
     const size = e.boss ? 74 : 42;
     if (e.hitFlash > 0) { ctx.save(); ctx.globalAlpha = 0.5; ctx.beginPath(); ctx.arc(e.x, e.y - size * 0.34, size * 0.5, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore(); }
     drawEntity(ctx, e.x, e.y, size, e.art, e.emoji, true, e.color);

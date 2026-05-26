@@ -22,7 +22,18 @@ export function loadMeta() {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const m = JSON.parse(raw);
-      if (m && m.v === 1) return Object.assign(defaultMeta(), m);
+      if (m && m.v === 1) {
+        const d = defaultMeta();
+        return {
+          ...d, ...m,
+          unlockedDefenders: m.unlockedDefenders || d.unlockedDefenders,
+          unlockedPowers: m.unlockedPowers || d.unlockedPowers,
+          upgrades: { ...(m.upgrades || {}) },
+          progress: { ...d.progress, ...(m.progress || {}) },
+          settings: { ...d.settings, ...(m.settings || {}) },
+          codex: { ...d.codex, ...(m.codex || {}) },
+        };
+      }
     }
   } catch (_) { /* corrupt → fresh */ }
   return defaultMeta();
