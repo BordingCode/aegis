@@ -3,7 +3,7 @@
    Fleshed out in M1; this establishes the layout shell.
    ============================================================ */
 
-.screen.battle { padding: 0; overflow: hidden; }
+.screen.battle { position: fixed; inset: 0; min-height: 0; padding: 0; overflow: hidden; }
 
 /* The canvas fills the screen; HUD floats above it. */
 #battlefield {

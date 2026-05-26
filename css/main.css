@@ -37,8 +37,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 html, body {
-  height: 100%;
-  overflow: hidden;
+  margin: 0;
   background: var(--bg);
   color: var(--ivory);
   font-family: var(--font-ui);
@@ -46,16 +45,18 @@ html, body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overscroll-behavior: none;
-  touch-action: manipulation;
 }
 
-/* Dead-simple, stable full-screen container. No dynamic height, no opacity layer,
-   no compositing tricks — those caused flickering bands on some mobile GPUs. */
-#app, .app { position: fixed; inset: 0; }
+/* Menus run as a NORMAL (non-fixed) page so repaints/button presses don't
+   re-rasterize a position:fixed layer (the Android-Chrome flicker bug). Only the
+   battle screen is fixed (it needs a full-screen canvas). */
+#app, .app { position: relative; }
 
 .screen {
-  position: absolute; inset: 0;
+  position: relative;
   display: flex; flex-direction: column;
+  min-height: 100vh;          /* fallback */
+  min-height: 100svh;
   padding: calc(12px + var(--safe-t)) calc(16px + var(--safe-r)) calc(12px + var(--safe-b)) calc(16px + var(--safe-l));
 }
 
