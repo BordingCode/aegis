@@ -47,6 +47,8 @@ async function boot() {
   await loadArtManifest();
   go('title');
   hideSplash();
+  // reveal the app only after the splash has cleared (avoids a double-logo cross-fade)
+  setTimeout(() => document.getElementById('app').classList.add('ready'), 420);
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }

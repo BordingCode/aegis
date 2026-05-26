@@ -43,5 +43,5 @@ export function screen(className = '') {
 
 export function hideSplash() {
   const s = document.getElementById('splash');
-  if (s) { s.classList.add('hide'); setTimeout(() => s.remove(), 600); }
+  if (s) { s.classList.add('hide'); setTimeout(() => s.remove(), 400); }
 }
