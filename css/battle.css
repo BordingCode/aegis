@@ -110,6 +110,7 @@
 }
 .def-menu .btn { padding: 8px 12px; min-height: 38px; font-size: 14px; box-shadow: 0 3px 0 rgba(0,0,0,.3); }
 .def-menu .menu-max { padding: 0 10px; font-weight: 900; color: var(--gold); }
+.def-menu .menu-lvl { padding: 0 8px; font-weight: 900; color: var(--ivory); font-size: 13px; }
 
 /* tap-a-card info strip (above the tray) */
 .info-strip {

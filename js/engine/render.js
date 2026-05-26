@@ -112,7 +112,11 @@ export function renderWorld(view, world, opts = {}) {
     if (d.fireFlash > 0) { ctx.beginPath(); ctx.arc(d.x, fy - 30, 26, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,210,.35)'; ctx.fill(); }
     drawEntity(ctx, d.defId, d.x, fy, 56, d.art, false, d.color);
     if (d.maxHp) drawHpBar(ctx, d.x, fy - 64, 36, Math.max(0, d.hp / d.maxHp), true);
-    if (d.tier > 1) { ctx.fillStyle = '#f0d27a'; ctx.font = '16px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('★', d.x + 20, fy - 60); }
+    if (d.level > 1) {
+      ctx.fillStyle = '#1b1206'; ctx.beginPath(); ctx.arc(d.x + 20, fy - 58, 11, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#f0d27a'; ctx.beginPath(); ctx.arc(d.x + 20, fy - 58, 11, 0, Math.PI * 2); ctx.lineWidth = 2; ctx.strokeStyle = '#f0d27a'; ctx.stroke();
+      ctx.fillStyle = '#f0d27a'; ctx.font = 'bold 13px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(d.level, d.x + 20, fy - 57);
+    }
   }
   // troops
   for (const u of world.units) {

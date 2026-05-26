@@ -16,13 +16,13 @@ function rangedTarget(world, d) {
 export function makeDefender(def, lane, x, y) {
   return {
     side: 'ally', defId: def.id, name: def.name, emoji: def.emoji, art: def.art, color: def.color, icon: def.icon, kind: def.kind,
-    lane, x, y, slot: 0,
+    lane, x, y, slot: 0, level: 1,
     hp: def.hp, maxHp: def.hp,
     range: def.range || 0, cooldown: def.cooldown || 0, cdT: 0, dmg: def.dmg || 0,
     proj: def.proj || null, canHitFlying: !!def.canHitFlying,
     gen: def.gen || 0, fxT: 1.0,
     auraRange: def.auraRange || 0, auraMult: def.auraMult || 1,
-    tier: 1, fireRateMult: 1, fireFlash: 0, hitFlash: 0, dead: false, def,
+    fireRateMult: 1, fireFlash: 0, hitFlash: 0, dead: false, def,
   };
 }
 

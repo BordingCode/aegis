@@ -169,10 +169,10 @@ export function renderBattle(opts = {}) {
 
   function openMenu(d) {
     closeMenu(); selectedDefender = d;
-    const upCost = world.upgradeCost(d);
-    const refund = Math.round((d.def.cost + (d.tier > 1 ? d.def.upgrade.cost : 0)) * (d.def.sellRefund || 0.5));
-    const items = [];
-    if (upCost > 0) items.push(el('button.btn.btn-primary', { onclick: () => { if (world.upgrade(d)) openMenu(d); } }, `▲ ${upCost}`));
+    const lvlCost = world.levelCost(d);
+    const refund = world.sellValue(d);
+    const items = [el('div.menu-lvl', {}, 'Lv ' + d.level)];
+    if (lvlCost > 0) items.push(el('button.btn.btn-primary', { onclick: () => { if (world.recruitFort(d.defId, d.lane)) openMenu(d); } }, `▲ ${lvlCost}`));
     else items.push(el('div.menu-max', {}, 'MAX'));
     items.push(el('button.btn.btn-ghost', { onclick: () => { world.sell(d); closeMenu(); selectedDefender = null; } }, `Sell +${refund}`));
     items.push(el('button.btn.btn-ghost', { onclick: () => { closeMenu(); selectedDefender = null; } }, '✕'));

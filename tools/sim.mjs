@@ -19,22 +19,22 @@ export function competent(interval = 0.4) {
     const lanes = w.level.lanes, f = w.favor.value;
     const enemyByLane = Array.from({ length: lanes }, () => []);
     for (const e of w.enemies) if (!e.dead) enemyByLane[e.lane].push(e);
-    const archByLane = Array.from({ length: lanes }, () => 0);
+    const archLvl = Array.from({ length: lanes }, () => 0);
     const shrineLane = Array.from({ length: lanes }, () => false);
     let shrines = 0;
-    for (const d of w.defenders) { if (d.dead) continue; if (d.defId === 'toxotes') archByLane[d.lane]++; if (d.defId === 'shrine') { shrines++; shrineLane[d.lane] = true; } }
+    for (const d of w.defenders) { if (d.dead) continue; if (d.defId === 'toxotes') archLvl[d.lane] = Math.max(archLvl[d.lane], d.level); if (d.defId === 'shrine') { shrines++; shrineLane[d.lane] = true; } }
     const unitByLane = Array.from({ length: lanes }, () => 0);
     for (const u of w.units) if (!u.dead) unitByLane[u.lane]++;
     const minEnemyX = (l) => enemyByLane[l].reduce((m, e) => Math.min(m, e.x), Infinity);
 
-    // 1. every active lane needs at least one archer on the wall
-    for (let l = 0; l < lanes; l++) if (enemyByLane[l].length && archByLane[l] < 1 && f >= 60) return void w.recruitFort('toxotes', l);
+    // 1. every active lane needs an archer on the wall
+    for (let l = 0; l < lanes; l++) if (enemyByLane[l].length && archLvl[l] < 1 && f >= 60) return void w.recruitFort('toxotes', l);
     // 2. early economy: a few Shrines, spread across lanes
     if (shrines < 3 && t < 32 && f >= 50) { for (const l of [2, 0, 4, 1, 3]) if (!shrineLane[l]) return void w.recruitFort('shrine', l); }
     // 3. protect the wall: enemy nearing the fort with no troop holding -> sortie a Hoplite
     for (let l = 0; l < lanes; l++) if (minEnemyX(l) < 560 && unitByLane[l] === 0 && f >= 55) return void w.deployLane('hoplite', l);
-    // 4. reinforce active lanes to 2 archers
-    for (let l = 0; l < lanes; l++) if (enemyByLane[l].length && archByLane[l] < 2 && f >= 60) return void w.recruitFort('toxotes', l);
+    // 4. level up archers on active lanes
+    for (let l = 0; l < lanes; l++) if (enemyByLane[l].length && archLvl[l] < 3 && f >= 60) return void w.recruitFort('toxotes', l);
     // 5. keep threatened lanes blocked further out
     for (let l = 0; l < lanes; l++) if (minEnemyX(l) < 800 && unitByLane[l] < 1 && f >= 55) return void w.deployLane('hoplite', l);
     // 6. Zeus on the densest cluster
@@ -54,9 +54,9 @@ export function naive(interval = 0.5) {
     const lanes = w.level.lanes, f = w.favor.value;
     const enemyByLane = Array.from({ length: lanes }, () => 0);
     for (const e of w.enemies) if (!e.dead) enemyByLane[e.lane]++;
-    const archByLane = Array.from({ length: lanes }, () => 0);
-    for (const d of w.defenders) if (!d.dead && d.defId === 'toxotes') archByLane[d.lane]++;
-    for (let l = 0; l < lanes; l++) if (enemyByLane[l] && archByLane[l] < 2 && f >= 60) return void w.recruitFort('toxotes', l);
+    const archLvl = Array.from({ length: lanes }, () => 0);
+    for (const d of w.defenders) if (!d.dead && d.defId === 'toxotes') archLvl[d.lane] = Math.max(archLvl[d.lane], d.level);
+    for (let l = 0; l < lanes; l++) if (enemyByLane[l] && archLvl[l] < 3 && f >= 60) return void w.recruitFort('toxotes', l);
   };
 }
 

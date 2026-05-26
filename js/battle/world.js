@@ -58,10 +58,19 @@ export function createWorld(level, { rng, onEvent, mods = [] } = {}) {
       const e = makeEnemy(def, lane); e.x = level.spawnX; e.y = laneCenterY(level, lane);
       this.enemies.push(e);
     },
-    // Post a non-melee unit to a lane on the fort; it stacks along the wall.
+    // Post a non-melee unit to a lane on the fort. If one of this type already
+    // holds the lane, LEVEL it up instead of stacking a duplicate (fewer entities).
     recruitFort(defId, lane) {
       const def = DEFENDER_BY_ID[defId];
-      if (!def || def.deploy !== 'fort' || !this.favor.spend(def.cost)) return false;
+      if (!def || def.deploy !== 'fort') return false;
+      const existing = this.defenders.find((d) => !d.dead && d.lane === lane && d.defId === defId);
+      if (existing) {
+        if (existing.level >= (def.maxLevel || 10) || !this.favor.spend(def.cost)) return false;
+        this.levelUp(existing);
+        this.emit('build', { d: existing });
+        return true;
+      }
+      if (!this.favor.spend(def.cost)) return false;
       const slot = this.defenders.filter((d) => d.lane === lane).length;
       const x = this.fortX + 30 + Math.min(slot, 6) * 28;
       const d = makeDefender(def, lane, x, laneCenterY(level, lane));
@@ -71,6 +80,18 @@ export function createWorld(level, { rng, onEvent, mods = [] } = {}) {
       this.emit('build', { d });
       return true;
     },
+    levelUp(d) {
+      const p = d.def.perLevel || {};
+      d.level++;
+      if (p.hp) { d.maxHp += p.hp; d.hp += p.hp; }
+      if (p.dmg) d.dmg += p.dmg;
+      if (p.range) d.range += p.range;
+      if (p.gen) { d.gen += p.gen; this.favor.bonusRate += p.gen; }
+      if (p.auraRange) d.auraRange += p.auraRange;
+      if (p.auraMult) d.auraMult += p.auraMult;
+    },
+    levelCost(d) { return d.level < (d.def.maxLevel || 10) ? d.def.cost : 0; },
+    sellValue(d) { return Math.round(d.def.cost * d.level * (d.def.sellRefund || 0.5)); },
     // nearest living fort unit to a point (for the tap-to-upgrade menu).
     defenderAt(x, y, r = 38) {
       let best = null, bd = r * r;
@@ -122,23 +143,9 @@ export function createWorld(level, { rng, onEvent, mods = [] } = {}) {
 
     spawnProjectile(d, target) { this.projectiles.spawn(d, target); },
 
-    // ---- upgrade / sell (stationary only) ----
-    upgradeCost(d) { return d.def.upgrade && d.tier < 2 ? d.def.upgrade.cost : 0; },
-    upgrade(d) {
-      const up = d.def.upgrade;
-      if (!up || d.tier >= 2 || !this.favor.spend(up.cost)) return false;
-      d.tier = 2;
-      if (up.dmg) d.dmg += up.dmg;
-      if (up.range) d.range += up.range;
-      if (up.gen) { d.gen += up.gen; this.favor.bonusRate += up.gen; }
-      if (up.auraRange) d.auraRange += up.auraRange;
-      if (up.auraMult) d.auraMult += up.auraMult;
-      this.emit('upgrade', { d });
-      return true;
-    },
+    // ---- sell (level-up is via recruitFort) ----
     sell(d) {
-      const spent = d.def.cost + (d.tier > 1 ? d.def.upgrade.cost : 0);
-      const refund = Math.round(spent * (d.def.sellRefund || 0.5));
+      const refund = this.sellValue(d);
       this.favor.add(refund);
       if (d.kind === 'favor') this.favor.bonusRate -= d.gen;
       d.dead = true;
