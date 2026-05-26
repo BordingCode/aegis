@@ -11,10 +11,10 @@ export const DEFENDERS = [
     upgrade: { cost: 60, gen: 6 } },
 
   { id: 'toxotes', name: 'Toxotes', emoji: '🏹', art: 'defenders/toxotes.webp', color: '#7bb05a', icon: 'bow',
-    deploy: 'cell', kind: 'ranged', cost: 75, hp: 90, range: 620, cooldown: 1.0, dmg: 12, proj: 'arrow',
+    deploy: 'cell', kind: 'ranged', cost: 75, hp: 90, range: 360, cooldown: 1.0, dmg: 12, proj: 'arrow',
     canHitFlying: true, sellRefund: 0.6,
     blurb: 'Archer. Shoots the nearest enemy ahead in its lane. Hits flyers.',
-    upgrade: { cost: 80, dmg: 10, range: 80 } },
+    upgrade: { cost: 80, dmg: 10, range: 70 } },
 
   { id: 'oracle', name: 'Oracle', emoji: '🔮', art: 'defenders/oracle.webp', color: '#b07bd0', icon: 'eye',
     deploy: 'cell', kind: 'aura', cost: 110, hp: 90, auraRange: 175, auraMult: 1.4, sellRefund: 0.6,
