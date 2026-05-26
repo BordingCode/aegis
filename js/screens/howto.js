@@ -6,11 +6,11 @@ import { go } from '../main.js';
 
 const ROWS = [
   ['gate', 'Hold the fort', 'Your fort is on the left; Zeus guards it. Enemies march in from the right along 5 lanes. If too many reach the fort, it falls.'],
-  ['coin', 'Favor', 'Build Shrines to earn Favor over time. Spend Favor to place towers and send troops.'],
-  ['column', 'Towers — tap a cell', 'Shrine earns Favor, Toxotes (archer) shoots down its lane and hits flyers, Oracle hastens nearby allies.'],
-  ['shield', 'Troops — tap a lane', 'Send a Hoplite marching down a lane to block and fight. Costs Favor each.'],
+  ['coin', 'Favor', 'Post Shrines on the wall to earn Favor over time. Spend Favor to post wall units and send out troops.'],
+  ['column', 'Wall units — tap a lane', 'Posted on the fort and stacked: Toxotes (archer) shoots down its lane and hits flyers, Oracle hastens nearby wall units, Shrine earns Favor. Vulnerable if a lane breaks!'],
+  ['shield', 'Troops — tap a lane', 'Sortie a Hoplite to march out and hold a lane. Keep troops out front to shield your archers. Costs Favor each.'],
   ['bolt', 'Zeus', 'Zeus smites the foe nearest the fort on his own. Tap his power to call a Lightning Strike anywhere (on cooldown).'],
-  ['skull', 'Beware', 'Enemies destroy your units in their path — block lanes! Harpies fly over your line; only archers and Zeus can hit them.'],
+  ['skull', 'Beware', 'Enemies eat through your units — if a lane breaks they reach the wall and pick off your archers. Harpies fly over; only archers and Zeus can hit them.'],
 ];
 
 export function renderHowTo() {

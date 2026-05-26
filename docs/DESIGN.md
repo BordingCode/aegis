@@ -10,11 +10,11 @@ The seals of the Underworld are failing. A demigod, doomed to keep returning, ho
 3. **Act 3 — the Underworld gates.**
 
 ## Core loop (a map, ~5–10 min)
-- Enemies spawn and walk a **single winding path** toward your **gate** (gate HP; 0 = lose).
-- **Favor** is the build resource: a slow passive trickle **plus** a buildable **Shrine** generator (PvZ sunflower analog).
-- Place defenders on **fixed build-plots** beside the path. Tap an empty plot → build tray; tap a placed defender → **upgrade (spend Favor, Kingdom Rush style) or sell**.
+- **5 lanes**; enemies march LEFT toward your **fort** (fort HP; 0 = lose). **Zeus** stands on the fort, auto-smiting the nearest foe.
+- **Favor** is the build resource: a slow passive trickle **plus** a **Shrine** posted on the wall.
+- **Age-of-War model:** **Wall units** (Toxotes archer, Oracle buff, Shrine) are posted to a lane ON the fort — *tap a card, tap a lane* — and **stack** along the wall, firing down their lane; they're **vulnerable** if the lane breaks. **Troops** (Hoplite, melee) **sortie** out — *tap a card, tap a lane* — to block & fight forward and shield the wall. Tap a posted unit → **upgrade or sell**.
 - **God-powers** on cooldown, tap-to-cast (prototype: **Zeus** Lightning Strike — AoE + stun).
-- Clear all waves → win the map.
+- Clear all waves → win the map. Drachma is earned every run (scaled by foes slain), so meta-progress builds even on a loss.
 
 ## Roguelite structure
 - A **run** = a linear gauntlet of ~5 maps per act (~15 total). Each map ends with a **pick-1-of-3 god-boon** (Hades style) from a random Olympian.

@@ -1,29 +1,29 @@
-// Unit definitions. `deploy` decides interaction + behaviour:
-//   'cell' — stationary defender placed on a grid cell (has HP, can be eaten).
-//   'lane' — mobile Age-of-War troop summoned at the fort; marches down a lane.
-// `kind` drives combat: favor | ranged | aura | melee_unit.
-// Every unit has a `blurb` + stat fields shown in the tap-to-read info card.
+// Unit definitions. `deploy` decides placement:
+//   'fort' — posted to a lane ON the fort; stacks at the wall, stays put, shoots.
+//            Non-melee. Vulnerable: if enemies break the lane they eat through them.
+//   'lane' — mobile melee troop sortied into a lane; marches out to fight.
+// `kind`: favor | ranged | aura | melee_unit.
 
 export const DEFENDERS = [
   { id: 'shrine', name: 'Shrine', emoji: '⛩️', art: 'defenders/shrine.webp', color: '#e8c25c', icon: 'column',
-    deploy: 'cell', kind: 'favor', cost: 50, hp: 120, gen: 8, sellRefund: 0.6,
-    blurb: 'Generates Favor over time. No attack — protect it.',
-    upgrade: { cost: 60, gen: 6 } },
+    deploy: 'fort', kind: 'favor', cost: 55, hp: 140, gen: 5, sellRefund: 0.6,
+    blurb: 'Posted to the wall. Generates Favor over time. No attack.',
+    upgrade: { cost: 60, gen: 4 } },
 
   { id: 'toxotes', name: 'Toxotes', emoji: '🏹', art: 'defenders/toxotes.webp', color: '#7bb05a', icon: 'bow',
-    deploy: 'cell', kind: 'ranged', cost: 75, hp: 90, range: 360, cooldown: 1.0, dmg: 12, proj: 'arrow',
+    deploy: 'fort', kind: 'ranged', cost: 60, hp: 110, range: 470, cooldown: 1.0, dmg: 10, proj: 'arrow',
     canHitFlying: true, sellRefund: 0.6,
-    blurb: 'Archer. Shoots the nearest enemy ahead in its lane. Hits flyers.',
-    upgrade: { cost: 80, dmg: 10, range: 70 } },
+    blurb: 'Archer posted to the wall. Shoots enemies down its lane. Hits flyers.',
+    upgrade: { cost: 70, dmg: 10, range: 70 } },
 
   { id: 'oracle', name: 'Oracle', emoji: '🔮', art: 'defenders/oracle.webp', color: '#b07bd0', icon: 'eye',
-    deploy: 'cell', kind: 'aura', cost: 110, hp: 90, auraRange: 175, auraMult: 1.4, sellRefund: 0.6,
-    blurb: 'Hastens the attacks of nearby defenders and troops.',
-    upgrade: { cost: 100, auraRange: 50, auraMult: 0.15 } },
+    deploy: 'fort', kind: 'aura', cost: 110, hp: 100, auraRange: 200, auraMult: 1.4, sellRefund: 0.6,
+    blurb: 'Posted to the wall. Hastens the attacks of nearby wall units.',
+    upgrade: { cost: 100, auraRange: 60, auraMult: 0.15 } },
 
   { id: 'hoplite', name: 'Hoplite', emoji: '🛡️', art: 'units/hoplite.webp', color: '#6f86b8', icon: 'shield',
-    deploy: 'lane', kind: 'melee_unit', cost: 60, hp: 170, dmg: 18, atkCd: 0.7, speed: 72, contact: 52,
-    blurb: 'Marches down a lane and fights what it meets. Costs Favor each.' },
+    deploy: 'lane', kind: 'melee_unit', cost: 72, hp: 185, dmg: 18, atkCd: 0.7, speed: 74, contact: 52,
+    blurb: 'Sorties down a lane to block and fight. Costs Favor each.' },
 ];
 
 export const DEFENDER_BY_ID = Object.fromEntries(DEFENDERS.map((d) => [d.id, d]));

@@ -11,11 +11,11 @@ export const LEVELS = [
     world: { w: 1280, h: 720 },
     lanes: 5,
     grid: { x0: 200, cols: 8, cellW: 115 },   // cell j center x = x0 + j*cellW + cellW/2
-    fort: { x: 178, hp: 30 },                  // enemies reaching x<=fort.x damage the fort
+    fort: { x: 178, hp: 70 },                  // enemies reaching x<=fort.x damage the fort
     spawnX: 1245,
     deployX: 190,                              // where mobile troops appear
     god: { id: 'zeus', range: 210, cooldown: 3.0, dmg: 22 }, // fort auto-defender (last resort)
-    favor: { start: 105, rate: 6, max: 360 },
+    favor: { start: 92, rate: 4.2, max: 360 },
     waves: [
       // early probe
       { at: 3,  enemy: 'shade',    lane: 2, count: 5, gap: 0.8 },

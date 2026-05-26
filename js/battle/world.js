@@ -11,7 +11,8 @@ import { createSpawner, stepSpawner } from './spawner.js';
 import { ENEMY_BY_ID } from '../data/enemies.js';
 import { DEFENDER_BY_ID } from '../data/defenders.js';
 import { POWER_BY_ID } from '../data/powers.js';
-import { laneCenterY, laneAtY, cellCenterX, colAtX } from '../data/levels.js';
+import { laneCenterY } from '../data/levels.js';
+import { dist2 } from '../engine/vec.js';
 
 function applyMod(mods, target, stat, base) {
   let v = base;
@@ -37,7 +38,6 @@ export function createWorld(level, { rng, onEvent, mods = [] } = {}) {
 
     enemies: [], units: [], defenders: [],
     projectiles: createProjectilePool(),
-    occupied: new Set(),
     spawner: createSpawner(level),
     elapsed: 0, killed: 0, status: 'playing',
 
@@ -58,20 +58,24 @@ export function createWorld(level, { rng, onEvent, mods = [] } = {}) {
       const e = makeEnemy(def, lane); e.x = level.spawnX; e.y = laneCenterY(level, lane);
       this.enemies.push(e);
     },
-    cellKey(lane, col) { return lane + '_' + col; },
-    cellAt(x, y) { const lane = laneAtY(level, y); const col = colAtX(level, x); return col < 0 ? null : { lane, col }; },
-    canPlace(lane, col) { return col >= 0 && col < level.grid.cols && !this.occupied.has(this.cellKey(lane, col)); },
-
-    buildCell(lane, col, defId) {
+    // Post a non-melee unit to a lane on the fort; it stacks along the wall.
+    recruitFort(defId, lane) {
       const def = DEFENDER_BY_ID[defId];
-      if (!def || def.deploy !== 'cell' || !this.canPlace(lane, col)) return false;
-      if (!this.favor.spend(def.cost)) return false;
-      const d = makeDefender(def, { lane, col, x: cellCenterX(level, col), y: laneCenterY(level, lane) });
-      this.occupied.add(this.cellKey(lane, col));
+      if (!def || def.deploy !== 'fort' || !this.favor.spend(def.cost)) return false;
+      const slot = this.defenders.filter((d) => d.lane === lane).length;
+      const x = this.fortX + 30 + Math.min(slot, 6) * 28;
+      const d = makeDefender(def, lane, x, laneCenterY(level, lane));
+      d.slot = slot;
       this.defenders.push(d);
       if (d.kind === 'favor') this.favor.bonusRate += d.gen;
       this.emit('build', { d });
       return true;
+    },
+    // nearest living fort unit to a point (for the tap-to-upgrade menu).
+    defenderAt(x, y, r = 38) {
+      let best = null, bd = r * r;
+      for (const d of this.defenders) { if (d.dead) continue; const dd = dist2(x, y, d.x, d.y); if (dd <= bd) { bd = dd; best = d; } }
+      return best;
     },
     deployLane(defId, lane) {
       const def = DEFENDER_BY_ID[defId];
@@ -110,10 +114,7 @@ export function createWorld(level, { rng, onEvent, mods = [] } = {}) {
       a.hp -= dmg; a.hitFlash = 0.12;
       if (a.hp <= 0 && !a.dead) {
         a.dead = true;
-        if (a.col !== undefined) { // a stationary defender
-          this.occupied.delete(this.cellKey(a.lane, a.col));
-          if (a.kind === 'favor') this.favor.bonusRate -= a.gen;
-        }
+        if (a.kind === 'favor') this.favor.bonusRate -= a.gen; // a destroyed Shrine
         this.emit('allyDown', { a });
       }
     },
@@ -140,7 +141,6 @@ export function createWorld(level, { rng, onEvent, mods = [] } = {}) {
       const refund = Math.round(spent * (d.def.sellRefund || 0.5));
       this.favor.add(refund);
       if (d.kind === 'favor') this.favor.bonusRate -= d.gen;
-      this.occupied.delete(this.cellKey(d.lane, d.col));
       d.dead = true;
       this.defenders = this.defenders.filter((x) => x !== d);
       this.emit('sell', { d, refund });

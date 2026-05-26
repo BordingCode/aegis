@@ -63,7 +63,7 @@ export function renderBattle(opts = {}) {
       el('span.glyph', { style: { color: def.color || '#f0d27a' } }, [icon(def.icon || 'laurel', { size: 28 })]),
       el('span.name', {}, def.name),
       el('span.cost', {}, [icon('coin', { size: 12 }), ' ' + def.cost]),
-      el('span.tag', {}, def.deploy === 'lane' ? 'troop' : 'tower'),
+      el('span.tag', {}, def.deploy === 'lane' ? 'sortie' : 'wall'),
     ]);
     trayCards[id] = card;
     tray.append(card);
@@ -112,7 +112,7 @@ export function renderBattle(opts = {}) {
     infoEl.style.display = 'flex';
     infoEl.replaceChildren(
       el('span.glyph', { style: { color: def.color } }, [icon(def.icon || 'laurel', { size: 22 })]),
-      el('div.info-text', {}, [el('b', {}, `${def.name} — ${def.deploy === 'lane' ? 'tap a lane' : 'tap a cell'}`), el('span', {}, def.blurb), el('span.stats', {}, statLine(def))]),
+      el('div.info-text', {}, [el('b', {}, `${def.name} — ${def.deploy === 'lane' ? 'tap a lane to send out' : 'tap a lane to post on the wall'}`), el('span', {}, def.blurb), el('span.stats', {}, statLine(def))]),
     );
   }
   function hideInfo() { infoEl.style.display = 'none'; }
@@ -122,7 +122,7 @@ export function renderBattle(opts = {}) {
     if (selectedBuild === id) { clearSelection(); return; }
     selectedBuild = id;
     const def = DEFENDER_BY_ID[id];
-    mode = def.deploy === 'lane' ? 'placeLane' : 'placeCell';
+    mode = def.deploy === 'lane' ? 'placeLane' : 'placeFort';
     showInfo(def); refreshTray(); refreshPower();
   }
   function clearSelection() { selectedBuild = null; mode = 'idle'; hideInfo(); refreshTray(); refreshPower(); }
@@ -149,24 +149,19 @@ export function renderBattle(opts = {}) {
   }
 
   // ---------- tap ----------
-  function defenderAtCell(cell) { return world.defenders.find((d) => !d.dead && d.lane === cell.lane && d.col === cell.col) || null; }
-
   function onTap(w) {
     if (ended || paused) return;
     if (mode === 'target') { world.castPowerAt(w.x, w.y); mode = 'idle'; hideInfo(); refreshPower(); return; }
     if (selectedBuild) {
       const def = DEFENDER_BY_ID[selectedBuild];
-      if (def.deploy === 'cell') {
-        const cell = world.cellAt(w.x, w.y);
-        if (cell) { const occ = defenderAtCell(cell); if (occ) openMenu(occ); else world.buildCell(cell.lane, cell.col, selectedBuild); }
-      } else if (w.x > world.fortX) {
-        world.deployLane(selectedBuild, laneAtY(level, w.y));
-      }
+      const lane = laneAtY(level, w.y);
+      if (def.deploy === 'fort') world.recruitFort(selectedBuild, lane);
+      else world.deployLane(selectedBuild, lane);
       refreshTray();
       return;
     }
-    const cell = world.cellAt(w.x, w.y);
-    if (cell) { const occ = defenderAtCell(cell); if (occ) { openMenu(occ); return; } }
+    const occ = world.defenderAt(w.x, w.y);
+    if (occ) { openMenu(occ); return; }
     closeMenu(); selectedDefender = null;
   }
 
@@ -220,16 +215,18 @@ export function renderBattle(opts = {}) {
   function endBattle(kind) {
     if (ended) return; ended = true; loop.pause(); closeMenu(); selectedDefender = null; hideInfo();
     const win = kind === 'win';
-    const reward = (level.reward && level.reward.meta) || 0;
+    const base = win ? (level.reward && level.reward.meta) || 0 : 0;
+    const earned = base + Math.floor(world.killed / 3); // Drachma always accrues, scaled by foes slain
     if (Game.meta) {
-      if (win) { Game.meta.currency += reward; Game.meta.progress.wins++; }
+      Game.meta.currency += earned;
+      if (win) Game.meta.progress.wins++;
       Game.meta.progress.runs++;
       saveMeta(Game.meta);
     }
     hideOverlay();
     overlay = el('div.overlay', {}, [el('div.panel' + (win ? '.win' : '.lose'), {}, [
       el('h2', {}, win ? 'Victory!' : 'The fort has fallen'),
-      el('p', {}, win ? `The dead are turned back. +${reward} Drachma earned.` : 'The dead pour through. The demigod returns to the Styx…'),
+      el('p', {}, win ? `The dead are turned back. +${earned} Drachma earned.` : `${world.killed} of the dead felled. +${earned} Drachma. The demigod returns to the Styx…`),
       el('div.row', {}, [
         el('button.btn.btn-primary', { dataset: { testid: 'btn-tohub' }, onclick: () => { cleanup(); go('hub'); } }, 'To the Hub'),
         el('button.btn.btn-ghost', { dataset: { testid: 'btn-retry' }, onclick: () => { cleanup(); renderBattle({ level }); } }, 'Retry'),

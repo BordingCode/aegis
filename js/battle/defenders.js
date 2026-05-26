@@ -13,10 +13,10 @@ function rangedTarget(world, d) {
   return best;
 }
 
-export function makeDefender(def, cell) {
+export function makeDefender(def, lane, x, y) {
   return {
     side: 'ally', defId: def.id, name: def.name, emoji: def.emoji, art: def.art, color: def.color, icon: def.icon, kind: def.kind,
-    lane: cell.lane, col: cell.col, x: cell.x, y: cell.y,
+    lane, x, y, slot: 0,
     hp: def.hp, maxHp: def.hp,
     range: def.range || 0, cooldown: def.cooldown || 0, cdT: 0, dmg: def.dmg || 0,
     proj: def.proj || null, canHitFlying: !!def.canHitFlying,
