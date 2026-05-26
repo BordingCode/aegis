@@ -22,7 +22,7 @@ export function renderTitle() {
       el('div.title-mark', {}, [icon('laurel', { size: 34, cls: 'laurel-l' }), el('h1.logo', {}, 'AEGIS'), icon('laurel', { size: 34, cls: 'laurel-r' })]),
       el('p.tagline', {}, 'The seals of the Underworld are failing. Hold the gate.'),
       el('div.title-actions', {}, [
-        el('button.btn.btn-primary.btn-lg', { dataset: { testid: 'btn-new-run' }, onclick: () => go('battle') }, 'New Run'),
+        el('button.btn.btn-primary.btn-lg', { dataset: { testid: 'btn-new-run' }, onclick: () => go('hub') }, 'New Run'),
         el('button.btn.btn-ghost', { onclick: () => go('howto') }, 'How to Play'),
       ]),
     ]),

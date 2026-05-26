@@ -113,3 +113,26 @@
 }
 .def-menu .btn { padding: 8px 12px; min-height: 38px; font-size: 14px; box-shadow: 0 3px 0 rgba(0,0,0,.3); }
 .def-menu .menu-max { padding: 0 10px; font-weight: 900; color: var(--gold); }
+
+/* tap-a-card info strip (above the tray) */
+.info-strip {
+  position: absolute; left: 50%; transform: translateX(-50%); bottom: 116px; z-index: 6;
+  display: flex; gap: 10px; align-items: center; max-width: min(560px, 92vw);
+  background: rgba(13,38,62,.94); border: 2px solid rgba(255,255,255,.18);
+  border-radius: 12px; padding: 8px 12px; pointer-events: none;
+}
+.info-strip .info-text { display: flex; flex-direction: column; line-height: 1.2; }
+.info-strip .info-text b { font-size: 14px; }
+.info-strip .info-text span { font-size: 12px; font-weight: 700; color: rgba(246,239,221,.8); }
+.info-strip .info-text .stats { color: var(--gold); }
+
+.build-card { position: relative; }
+.build-card .tag { position: absolute; top: 4px; right: 7px; font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; color: rgba(246,239,221,.45); }
+.build-card .cost { display: inline-flex; align-items: center; gap: 3px; }
+
+.power-btn.ready { animation: pulseGlow 1.6s ease-in-out infinite; }
+.power-btn.armed { background: radial-gradient(circle at 50% 35%, #f0d27a, #d9a441); color: #3a2a07; border-color: var(--gold-d); }
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(240,210,122,.4), var(--shadow); }
+  50% { box-shadow: 0 0 0 6px rgba(240,210,122,.55), var(--shadow); }
+}

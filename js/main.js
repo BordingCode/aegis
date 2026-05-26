@@ -5,11 +5,15 @@ import { loadArtManifest } from './art.js';
 import { loadMeta } from './save.js';
 import { mount, screen, el, hideSplash } from './ui.js';
 import { renderTitle } from './screens/title.js';
+import { renderHub } from './screens/hub.js';
+import { renderHowTo } from './screens/howto.js';
 import { renderBattle } from './screens/battle.js';
 
-// Screen registry. Filled in as milestones land; unknown names show a stub.
+// Screen registry. Unknown names show a stub.
 const ROUTES = {
   title: renderTitle,
+  hub: renderHub,
+  howto: renderHowTo,
   battle: renderBattle,
 };
 

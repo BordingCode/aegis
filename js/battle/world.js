@@ -1,81 +1,128 @@
-// The live battle World: owns all entities and orchestrates one fixed sim step.
-// Build/upgrade/sell mutate it; the renderer reads it; nothing here touches the DOM.
+// The live battle World for the lane backbone. Owns enemies, mobile troops,
+// stationary defenders, the fort + god, projectiles and the power. Orchestrates
+// one fixed sim step. No DOM here.
 
-import { Path } from './path.js';
 import { Favor } from './favor.js';
 import { makeEnemy, stepEnemies } from './enemies.js';
+import { makeUnit, stepUnits } from './units.js';
 import { makeDefender, stepDefenders } from './defenders.js';
 import { createProjectilePool, stepProjectiles } from './projectiles.js';
 import { createSpawner, stepSpawner } from './spawner.js';
 import { ENEMY_BY_ID } from '../data/enemies.js';
 import { DEFENDER_BY_ID } from '../data/defenders.js';
-import { dist2 } from '../engine/vec.js';
+import { POWER_BY_ID } from '../data/powers.js';
+import { laneCenterY, laneAtY, cellCenterX, colAtX } from '../data/levels.js';
 
-export function createWorld(level, { rng, onEvent } = {}) {
+function applyMod(mods, target, stat, base) {
+  let v = base;
+  for (const m of mods) if (m.target === target && m.stat === stat) v = m.op === 'mul' ? v * m.value : v + m.value;
+  return v;
+}
+
+export function createWorld(level, { rng, onEvent, mods = [] } = {}) {
+  const power = POWER_BY_ID['zeus_bolt'];
   const world = {
-    level,
-    path: new Path(level.path),
-    favor: new Favor(level.favor),
-    gateHp: level.gate.hp, gateHpMax: level.gate.hp,
-    enemies: [],
-    defenders: [],
+    level, rng, mods,
+    fortX: level.fort.x,
+    laneCenterY: (lane) => laneCenterY(level, lane),
+
+    favor: new Favor({
+      start: applyMod(mods, 'favor', 'start', level.favor.start),
+      rate: applyMod(mods, 'favor', 'rate', level.favor.rate),
+      max: level.favor.max,
+    }),
+    gateHp: applyMod(mods, 'fort', 'hp', level.fort.hp),
+    gateHpMax: applyMod(mods, 'fort', 'hp', level.fort.hp),
+    hopliteDmgMult: applyMod(mods, 'hoplite', 'dmg', 1),
+
+    enemies: [], units: [], defenders: [],
     projectiles: createProjectilePool(),
-    plots: level.plots.map((p) => ({ ...p, occupant: null })),
+    occupied: new Set(),
     spawner: createSpawner(level),
-    elapsed: 0, killed: 0, leaked: 0,
-    status: 'playing',           // playing | won | lost
-    rng,
+    elapsed: 0, killed: 0, status: 'playing',
+
+    god: { x: level.fort.x - 14, range: level.god.range, cooldown: level.god.cooldown, dmg: level.god.dmg, cdT: 0, flash: 0, boltTo: null },
+    power: {
+      def: power, radius: power.radius, stun: power.stun,
+      cooldown: applyMod(mods, 'zeus', 'cooldown', power.cooldown),
+      dmg: applyMod(mods, 'zeus', 'dmg', power.dmg),
+      cdT: 0,
+    },
+
     _onEvent: onEvent || null,
+    emit(t, d) { if (this._onEvent) this._onEvent(t, d); },
 
-    emit(type, data) { if (this._onEvent) this._onEvent(type, data); },
-
-    spawnEnemy(id) { const def = ENEMY_BY_ID[id]; if (def) this.enemies.push(makeEnemy(def)); },
-    spawnProjectile(d, target) { this.projectiles.spawn(d, target); },
-
-    damageEnemy(e, dmg) {
-      if (e.dead) return;
-      const real = Math.max(1, Math.round(dmg - e.armor));
-      e.hp -= real; e.hitFlash = 0.12;
-      if (e.hp <= 0 && !e.dead) {
-        e.dead = true; this.favor.add(e.bounty); this.killed++;
-        this.emit('kill', { e });
-      }
+    // ---- spawning / placement ----
+    spawnEnemy(id, lane) {
+      const def = ENEMY_BY_ID[id]; if (!def) return;
+      const e = makeEnemy(def, lane); e.x = level.spawnX; e.y = laneCenterY(level, lane);
+      this.enemies.push(e);
     },
+    cellKey(lane, col) { return lane + '_' + col; },
+    cellAt(x, y) { const lane = laneAtY(level, y); const col = colAtX(level, x); return col < 0 ? null : { lane, col }; },
+    canPlace(lane, col) { return col >= 0 && col < level.grid.cols && !this.occupied.has(this.cellKey(lane, col)); },
 
-    step(dt) {
-      if (this.status !== 'playing') return;
-      const before = this.gateHp;
-      this.elapsed += dt;
-      stepSpawner(this, dt);
-      this.favor.update(dt);
-      stepEnemies(this, dt);
-      stepDefenders(this, dt);
-      stepProjectiles(this, dt);
-      if (this.gateHp < before) this.leaked += (before - this.gateHp);
-      if (this.gateHp <= 0) { this.status = 'lost'; this.emit('lose', {}); }
-      else if (this.spawner.done && this.enemies.length === 0) { this.status = 'won'; this.emit('win', {}); }
-    },
-
-    plotAt(wx, wy, r = 48) {
-      let best = null, bd = r * r;
-      for (const p of this.plots) { const d = dist2(wx, wy, p.x, p.y); if (d <= bd) { bd = d; best = p; } }
-      return best;
-    },
-
-    build(plotId, defId) {
-      const plot = this.plots.find((p) => p.id === plotId);
-      if (!plot || plot.occupant) return false;
+    buildCell(lane, col, defId) {
       const def = DEFENDER_BY_ID[defId];
-      if (!def || !this.favor.spend(def.cost)) return false;
-      const d = makeDefender(def, plot);
-      plot.occupant = d; this.defenders.push(d);
+      if (!def || def.deploy !== 'cell' || !this.canPlace(lane, col)) return false;
+      if (!this.favor.spend(def.cost)) return false;
+      const d = makeDefender(def, { lane, col, x: cellCenterX(level, col), y: laneCenterY(level, lane) });
+      this.occupied.add(this.cellKey(lane, col));
+      this.defenders.push(d);
       if (d.kind === 'favor') this.favor.bonusRate += d.gen;
       this.emit('build', { d });
       return true;
     },
+    deployLane(defId, lane) {
+      const def = DEFENDER_BY_ID[defId];
+      if (!def || def.deploy !== 'lane' || !this.favor.spend(def.cost)) return false;
+      const u = makeUnit(def, lane, this.hopliteDmgMult);
+      u.x = level.deployX; u.y = laneCenterY(level, lane);
+      this.units.push(u);
+      this.emit('deploy', { u });
+      return true;
+    },
 
+    // ---- power ----
+    powerReady() { return this.power.cdT <= 0; },
+    castPowerAt(x, y) {
+      if (this.power.cdT > 0) return false;
+      const r2 = this.power.radius * this.power.radius;
+      for (const e of this.enemies) {
+        if (e.dead) continue;
+        const dx = e.x - x, dy = e.y - y;
+        if (dx * dx + dy * dy <= r2) { this.damageEnemy(e, this.power.dmg); e.stunT = Math.max(e.stunT, this.power.stun); }
+      }
+      this.power.cdT = this.power.cooldown;
+      this.emit('bolt', { x, y, radius: this.power.radius });
+      return true;
+    },
+
+    // ---- damage ----
+    damageEnemy(e, dmg) {
+      if (e.dead) return;
+      const real = Math.max(1, Math.round(dmg - e.armor));
+      e.hp -= real; e.hitFlash = 0.12;
+      if (e.hp <= 0 && !e.dead) { e.dead = true; this.favor.add(e.bounty); this.killed++; this.emit('kill', { e }); }
+    },
+    damageAlly(a, dmg) {
+      if (a.dead) return;
+      a.hp -= dmg; a.hitFlash = 0.12;
+      if (a.hp <= 0 && !a.dead) {
+        a.dead = true;
+        if (a.col !== undefined) { // a stationary defender
+          this.occupied.delete(this.cellKey(a.lane, a.col));
+          if (a.kind === 'favor') this.favor.bonusRate -= a.gen;
+        }
+        this.emit('allyDown', { a });
+      }
+    },
+    hitGate(e) { this.gateHp = Math.max(0, this.gateHp - e.gateDmg); this.emit('gate', { e }); },
+
+    spawnProjectile(d, target) { this.projectiles.spawn(d, target); },
+
+    // ---- upgrade / sell (stationary only) ----
     upgradeCost(d) { return d.def.upgrade && d.tier < 2 ? d.def.upgrade.cost : 0; },
-
     upgrade(d) {
       const up = d.def.upgrade;
       if (!up || d.tier >= 2 || !this.favor.spend(up.cost)) return false;
@@ -88,17 +135,49 @@ export function createWorld(level, { rng, onEvent } = {}) {
       this.emit('upgrade', { d });
       return true;
     },
-
     sell(d) {
       const spent = d.def.cost + (d.tier > 1 ? d.def.upgrade.cost : 0);
       const refund = Math.round(spent * (d.def.sellRefund || 0.5));
       this.favor.add(refund);
       if (d.kind === 'favor') this.favor.bonusRate -= d.gen;
-      const plot = this.plots.find((p) => p.occupant === d);
-      if (plot) plot.occupant = null;
+      this.occupied.delete(this.cellKey(d.lane, d.col));
+      d.dead = true;
       this.defenders = this.defenders.filter((x) => x !== d);
       this.emit('sell', { d, refund });
       return refund;
+    },
+
+    // ---- the god on the fort ----
+    _stepGod(dt) {
+      const g = this.god;
+      if (g.flash > 0) g.flash -= dt;
+      g.cdT -= dt;
+      if (g.cdT > 0) return;
+      let best = null, bestX = Infinity;
+      for (const e of this.enemies) {
+        if (e.dead) continue;
+        if (e.x <= this.fortX + g.range && e.x < bestX) { best = e; bestX = e.x; }
+      }
+      if (best) {
+        this.damageEnemy(best, g.dmg);
+        g.cdT = g.cooldown; g.flash = 0.18; g.boltTo = { x: best.x, y: best.y };
+        this.emit('godbolt', { x: best.x, y: best.y });
+      }
+    },
+
+    step(dt) {
+      if (this.status !== 'playing') return;
+      this.elapsed += dt;
+      stepSpawner(this);
+      this.favor.update(dt);
+      stepDefenders(this, dt);
+      stepUnits(this, dt);
+      stepEnemies(this, dt);
+      stepProjectiles(this, dt);
+      this._stepGod(dt);
+      if (this.power.cdT > 0) this.power.cdT = Math.max(0, this.power.cdT - dt);
+      if (this.gateHp <= 0) { this.status = 'lost'; this.emit('lose', {}); }
+      else if (this.spawner.done && this.enemies.length === 0) { this.status = 'won'; this.emit('win', {}); }
     },
   };
   return world;
