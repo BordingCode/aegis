@@ -42,23 +42,22 @@ function stub(name) {
   mount(s);
 }
 
-// Drive layout height from the REAL visible viewport (works on every mobile
-// browser, unlike the svh unit). The mobile address bar/toolbar overlaps the page
-// and changes the visible height; visualViewport.height is the truthful value.
-function fitViewport() {
-  const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
-  if (h) document.documentElement.style.setProperty('--app-h', Math.round(h) + 'px');
+// Drive layout height from the real visible viewport. CRITICAL: only write the
+// CSS var when the height ACTUALLY changes, and debounce resize — re-setting it
+// every scroll/frame re-rasterizes the full-screen fixed layer and causes
+// flickering white bands + twitch on some devices.
+let _lastH = 0, _fitT = 0;
+function measureViewport() {
+  const h = Math.round(window.innerHeight);
+  if (h && h !== _lastH) { _lastH = h; document.documentElement.style.setProperty('--app-h', h + 'px'); }
 }
-fitViewport();
-window.addEventListener('resize', fitViewport);
-window.addEventListener('orientationchange', fitViewport);
-if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', fitViewport);
-  window.visualViewport.addEventListener('scroll', fitViewport);
-}
+function scheduleFit() { clearTimeout(_fitT); _fitT = setTimeout(measureViewport, 150); }
+measureViewport();
+window.addEventListener('resize', scheduleFit);
+window.addEventListener('orientationchange', scheduleFit);
 
 async function boot() {
-  fitViewport();
+  measureViewport();
   Game.meta = loadMeta();
   await loadArtManifest();
   go('title');
