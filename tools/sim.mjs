@@ -4,9 +4,12 @@
 //   node test/sim.mjs
 import { createWorld } from '../js/battle/world.js';
 import { LEVELS } from '../js/data/levels.js';
+import { BOON_BY_ID } from '../js/data/boons.js';
 import { RNG } from '../js/rng.js';
 
 const STEP = 1 / 60;
+// what the scripted player grabs between waves (cycled)
+const BOON_PICKS = ['ares_edge', 'hermes_spoils', 'ares_frenzy', 'athena_aegis', 'zeus_thunder', 'athena_phalanx'];
 
 // ---- strategies ----------------------------------------------------------
 export function noPlay() {}
@@ -68,16 +71,22 @@ export function run(level, strategy, label) {
   w.recruitFort = (...a) => { const r = _b(...a); if (r) builds++; return r; };
   w.deployLane = (...a) => { const r = _d(...a); if (r) deploys++; return r; };
   w.castPowerAt = (...a) => { const r = _c(...a); if (r) casts++; return r; };
-  let t = 0;
-  for (let s = 0; w.status === 'playing' && t < 300; s++, t += STEP) {
+  let t = 0, boonIdx = 0, boons = 0;
+  for (let s = 0; (w.status === 'playing' || w.status === 'waveclear') && t < 400; s++, t += STEP) {
+    if (w.status === 'waveclear') {
+      const b = BOON_BY_ID[BOON_PICKS[boonIdx++ % BOON_PICKS.length]];
+      if (b) { w.pickBoon(b); boons++; }
+      w.nextWave();
+      continue;
+    }
     w.step(STEP);
     strategy(w, t);
     if (w.gateHp < minFort) minFort = w.gateHp;
     if (firstLeak === null && w.gateHp < w.gateHpMax) firstLeak = t;
   }
   const pct = Math.round((w.gateHp / w.gateHpMax) * 100);
-  console.log(`${label.padEnd(12)} ${w.status.toUpperCase().padEnd(5)}  fort ${Math.max(0, Math.round(w.gateHp))}/${w.gateHpMax} (${pct}%)  slain ${w.killed}/${w.spawner.total}  firstLeak ${firstLeak ? firstLeak.toFixed(0) + 's' : '—'}  builds ${builds} troops ${deploys} casts ${casts}  end ${Math.round(w.elapsed)}s`);
-  return { status: w.status, pct, killed: w.killed, total: w.spawner.total };
+  console.log(`${label.padEnd(12)} ${w.status.toUpperCase().padEnd(5)}  fort ${Math.max(0, Math.round(w.gateHp))}/${w.gateHpMax} (${pct}%)  wave ${w.spawner.current + 1}/${w.spawner.waveCount}  slain ${w.killed}/${w.spawner.total}  boons ${boons}  builds ${builds} troops ${deploys} casts ${casts}`);
+  return { status: w.status, pct, killed: w.killed, total: w.spawner.total, boons };
 }
 
 // Only run the report when invoked directly (node test/sim.mjs), not on import.

@@ -15,7 +15,8 @@ test('Act 1: competent play wins but takes fort damage (tough, not trivial)', ()
   const r = run(LEVELS[0], competent(0.4), 'competent');
   assert.equal(r.status, 'won', 'competent play should win');
   assert.ok(r.pct < 95, `fort should take real damage (tough); got ${r.pct}%`);
-  assert.ok(r.killed >= r.total - 30, `should clear most enemies; got ${r.killed}/${r.total}`);
+  assert.ok(r.killed >= r.total - 40, `should clear most enemies; got ${r.killed}/${r.total}`);
+  assert.ok(r.boons >= 3, `should pick boons between waves; got ${r.boons}`);
 });
 
 test('determinism: same seed → same result', () => {

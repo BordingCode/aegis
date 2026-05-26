@@ -112,6 +112,18 @@
 .def-menu .menu-max { padding: 0 10px; font-weight: 900; color: var(--gold); }
 .def-menu .menu-lvl { padding: 0 8px; font-weight: 900; color: var(--ivory); font-size: 13px; }
 
+/* boon picker (between waves) */
+.boon-panel { max-width: min(640px, 95vw); }
+.boon-grid { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 4px; }
+.boon-card { width: 150px; display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; background: #16395e; border: 2px solid var(--gold-d); border-radius: 12px; padding: 12px 10px; cursor: pointer; color: var(--ivory); font-family: var(--font-ui); }
+.boon-card .boon-glyph { color: var(--gold); }
+.boon-card .boon-god { font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; color: var(--gold); }
+.boon-card b { font-size: 14px; }
+.boon-card .boon-desc { font-size: 11px; font-weight: 700; color: #c9c2ad; line-height: 1.2; }
+
+/* between-wave 'send next wave' button (battlefield stays tappable to build) */
+.send-next { position: fixed; left: 50%; transform: translateX(-50%); bottom: 116px; z-index: 8; }
+
 /* tap-a-card info strip (above the tray) */
 .info-strip {
   position: absolute; left: 50%; transform: translateX(-50%); bottom: 116px; z-index: 6;

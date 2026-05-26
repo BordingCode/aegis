@@ -52,7 +52,7 @@ export function stepDefenders(world, dt) {
     }
     if (d.kind === 'aura') continue;
     if (d.kind === 'ranged') {
-      d.cdT -= dt * d.fireRateMult;
+      d.cdT -= dt * d.fireRateMult * world.mods.fireRateMult;
       if (d.cdT <= 0) {
         const target = rangedTarget(world, d);
         if (target) { world.spawnProjectile(d, target); d.cdT = d.cooldown; d.fireFlash = 0.12; }

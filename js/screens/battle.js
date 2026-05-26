@@ -14,6 +14,7 @@ import { metaMods } from '../run/meta.js';
 import { LEVELS, LEVEL_BY_ID, laneAtY } from '../data/levels.js';
 import { DEFENDERS, DEFENDER_BY_ID } from '../data/defenders.js';
 import { POWER_BY_ID } from '../data/powers.js';
+import { rollBoons } from '../data/boons.js';
 import { saveMeta } from '../save.js';
 import { icon } from '../icons.js';
 import { go } from '../main.js';
@@ -37,12 +38,15 @@ export function renderBattle(opts = {}) {
   const gateBar = el('i');
   const gateVal = el('span', {}, '');
   const slainVal = el('span', {}, '0/0');
+  const waveVal = el('span', {}, '1/7');
   const favorStat = el('div.hud-stat.favor', { title: 'Favor' }, [icon('coin', { size: 16 }), favorVal]);
   const gateStat = el('div.hud-stat.gate', { title: 'Fort HP' }, [icon('gate', { size: 16 }), el('span.bar', {}, [gateBar]), gateVal]);
+  const waveStat = el('div.hud-stat', { title: 'Wave' }, [icon('laurel', { size: 16 }), waveVal]);
   const slainStat = el('div.hud-stat', { title: 'Slain / total' }, [icon('skull', { size: 16 }), slainVal]);
   const speedBtn = el('button.hud-btn', { title: 'Speed', dataset: { testid: 'btn-speed' }, onclick: toggleSpeed }, '1×');
   const pauseBtn = el('button.hud-btn', { title: 'Pause', dataset: { testid: 'btn-pause' }, onclick: togglePause }, [icon('pause', { size: 18 })]);
-  const hudTop = el('div.hud-top', {}, [favorStat, gateStat, slainStat, el('div.hud-spacer'), speedBtn, pauseBtn]);
+  const hudTop = el('div.hud-top', {}, [favorStat, gateStat, waveStat, slainStat, el('div.hud-spacer'), speedBtn, pauseBtn]);
+  const sendNextBtn = el('button.btn.btn-primary.send-next', { dataset: { testid: 'btn-send-wave' }, style: { display: 'none' }, onclick: () => sendNext() }, 'Send next wave  ▶');
 
   // power rail
   const powerDef = POWER_BY_ID['zeus_bolt'];
@@ -69,7 +73,7 @@ export function renderBattle(opts = {}) {
     tray.append(card);
   }
 
-  s.append(canvas, hudTop, powerRail, infoEl, tray);
+  s.append(canvas, hudTop, powerRail, infoEl, tray, sendNextBtn);
   mount(s);
 
   // ---------- engine ----------
@@ -81,11 +85,11 @@ export function renderBattle(opts = {}) {
   Game.battle = world; Game.screen = 'battle';
   window.__battle = world;
 
-  let mode = 'idle';            // idle | placeCell | placeLane | target
+  let mode = 'idle';            // idle | placeFort | placeLane | target
   let selectedBuild = null;
   let selectedDefender = null;
   let menuEl = null, overlay = null;
-  let paused = false, ended = false;
+  let paused = false, ended = false, breather = false;
   let speed = (Game.meta && Game.meta.settings && Game.meta.settings.speed) || 1;
 
   const loop = new GameLoop({
@@ -99,6 +103,7 @@ export function renderBattle(opts = {}) {
     else if (type === 'bolt') fx.push({ type: 'bolt', x: data.x, y: data.y, r: data.radius, t: 0.4, life: 0.4 });
     else if (type === 'godbolt') fx.push({ type: 'godbolt', x: data.x, y: data.y, t: 0.25, life: 0.25 });
     else if (type === 'impact') fx.push({ type: 'ring', x: data.x, y: data.y, r: data.splash || 12, t: 0.3, life: 0.3 });
+    else if (type === 'waveclear') showBoonPicker(data.wave);
     else if (type === 'win') endBattle('win');
     else if (type === 'lose') endBattle('lose');
   }
@@ -191,6 +196,7 @@ export function renderBattle(opts = {}) {
     gateBar.style.background = gr > 0.5 ? '#6fbf52' : gr > 0.25 ? '#e8c25c' : '#d6483b';
     gateVal.textContent = ' ' + Math.ceil(world.gateHp);
     slainVal.textContent = `${world.killed}/${world.spawner.total}`;
+    waveVal.textContent = `${world.spawner.current + 1}/${world.spawner.waveCount}`;
     const pcd = world.power.cooldown > 0 ? world.power.cdT / world.power.cooldown : 0;
     powerCd.style.setProperty('--cd', (pcd * 360) + 'deg');
     if (++affClock % 6 === 0) { refreshTray(); refreshPower(); }
@@ -236,10 +242,33 @@ export function renderBattle(opts = {}) {
     syncDebug({ status: world.status });
   }
 
+  // ---------- boons between waves ----------
+  function showBoonPicker(waveNum) {
+    loop.pause(); breather = true;
+    clearSelection(); closeMenu(); selectedDefender = null;
+    if (mode === 'target') { mode = 'idle'; hideInfo(); refreshPower(); }
+    const offered = rollBoons(world.rng, world.boons, 3);
+    const cards = offered.map((b) => el('button.boon-card', { dataset: { testid: 'boon-' + b.id }, onclick: () => { world.pickBoon(b); hideOverlay(); showBreather(); } }, [
+      el('span.boon-glyph', {}, [icon(b.icon || 'laurel', { size: 30 })]),
+      el('span.boon-god', {}, b.god),
+      el('b', {}, b.name),
+      el('span.boon-desc', {}, b.desc),
+    ]));
+    hideOverlay();
+    overlay = el('div.overlay', {}, [el('div.panel.boon-panel', {}, [
+      el('h2', {}, `Wave ${waveNum} held`),
+      el('p', {}, 'Choose a blessing of the gods'),
+      el('div.boon-grid', {}, cards),
+    ])]);
+    s.append(overlay);
+  }
+  function showBreather() { sendNextBtn.style.display = ''; } // paused; build/level freely, then send
+  function sendNext() { sendNextBtn.style.display = 'none'; breather = false; world.nextWave(); loop.resume(); }
+
   // ---------- lifecycle ----------
   const detachInput = attachInput(view, canvas, onTap);
   const onResize = () => view.resize();
-  const onVis = () => { if (ended || paused) return; if (document.hidden) loop.pause(); else loop.resume(); };
+  const onVis = () => { if (ended || paused || breather) return; if (document.hidden) loop.pause(); else loop.resume(); };
   window.addEventListener('resize', onResize);
   document.addEventListener('visibilitychange', onVis);
   function cleanup() { loop.stop(); detachInput(); window.removeEventListener('resize', onResize); document.removeEventListener('visibilitychange', onVis); hideOverlay(); closeMenu(); Game.battle = null; }

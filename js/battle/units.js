@@ -31,7 +31,7 @@ export function stepUnits(world, dt) {
     u.y = world.laneCenterY(u.lane);
     const target = targetFor(world, u);
     if (target) {
-      u.atkT -= dt * u.fireRateMult;
+      u.atkT -= dt * u.fireRateMult * world.mods.fireRateMult;
       if (u.atkT <= 0) { world.damageEnemy(target, u.dmg); u.atkT = u.atkCd; }
     } else {
       u.x = Math.min(rightLimit, u.x + u.speed * dt);

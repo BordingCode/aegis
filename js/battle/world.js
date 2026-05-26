@@ -7,7 +7,7 @@ import { makeEnemy, stepEnemies } from './enemies.js';
 import { makeUnit, stepUnits } from './units.js';
 import { makeDefender, stepDefenders } from './defenders.js';
 import { createProjectilePool, stepProjectiles } from './projectiles.js';
-import { createSpawner, stepSpawner } from './spawner.js';
+import { createSpawner, stepSpawner, startWave } from './spawner.js';
 import { ENEMY_BY_ID } from '../data/enemies.js';
 import { DEFENDER_BY_ID } from '../data/defenders.js';
 import { POWER_BY_ID } from '../data/powers.js';
@@ -20,21 +20,25 @@ function applyMod(mods, target, stat, base) {
   return v;
 }
 
-export function createWorld(level, { rng, onEvent, mods = [] } = {}) {
+export function createWorld(level, { rng, onEvent, mods: metaMods = [] } = {}) {
   const power = POWER_BY_ID['zeus_bolt'];
   const world = {
-    level, rng, mods,
+    level, rng,
     fortX: level.fort.x,
     laneCenterY: (lane) => laneCenterY(level, lane),
 
+    // live run modifiers, mutated by boons picked between waves
+    mods: { allyDmgMult: 1, fireRateMult: 1, bountyMult: 1, costMult: 1, hpMult: 1, powerDmgMult: 1, powerStunAdd: 0, powerChain: 0, godCdMult: 1, slowOnHit: 1, spawnSlow: 1 },
+    boons: [],
+
     favor: new Favor({
-      start: applyMod(mods, 'favor', 'start', level.favor.start),
-      rate: applyMod(mods, 'favor', 'rate', level.favor.rate),
+      start: applyMod(metaMods, 'favor', 'start', level.favor.start),
+      rate: applyMod(metaMods, 'favor', 'rate', level.favor.rate),
       max: level.favor.max,
     }),
-    gateHp: applyMod(mods, 'fort', 'hp', level.fort.hp),
-    gateHpMax: applyMod(mods, 'fort', 'hp', level.fort.hp),
-    hopliteDmgMult: applyMod(mods, 'hoplite', 'dmg', 1),
+    gateHp: applyMod(metaMods, 'fort', 'hp', level.fort.hp),
+    gateHpMax: applyMod(metaMods, 'fort', 'hp', level.fort.hp),
+    hopliteDmgMult: applyMod(metaMods, 'hoplite', 'dmg', 1),
 
     enemies: [], units: [], defenders: [],
     projectiles: createProjectilePool(),
@@ -44,8 +48,8 @@ export function createWorld(level, { rng, onEvent, mods = [] } = {}) {
     god: { x: level.fort.x - 14, range: level.god.range, cooldown: level.god.cooldown, dmg: level.god.dmg, cdT: 0, flash: 0, boltTo: null },
     power: {
       def: power, radius: power.radius, stun: power.stun,
-      cooldown: applyMod(mods, 'zeus', 'cooldown', power.cooldown),
-      dmg: applyMod(mods, 'zeus', 'dmg', power.dmg),
+      cooldown: applyMod(metaMods, 'zeus', 'cooldown', power.cooldown),
+      dmg: applyMod(metaMods, 'zeus', 'dmg', power.dmg),
       cdT: 0,
     },
 
@@ -56,25 +60,29 @@ export function createWorld(level, { rng, onEvent, mods = [] } = {}) {
     spawnEnemy(id, lane) {
       const def = ENEMY_BY_ID[id]; if (!def) return;
       const e = makeEnemy(def, lane); e.x = level.spawnX; e.y = laneCenterY(level, lane);
+      if (this.mods.spawnSlow < 1) { e.slowMult = this.mods.spawnSlow; e.slowT = 3; }
       this.enemies.push(e);
     },
+    cost(def) { return Math.max(1, Math.round(def.cost * this.mods.costMult)); },
     // Post a non-melee unit to a lane on the fort. If one of this type already
     // holds the lane, LEVEL it up instead of stacking a duplicate (fewer entities).
     recruitFort(defId, lane) {
       const def = DEFENDER_BY_ID[defId];
       if (!def || def.deploy !== 'fort') return false;
+      const c = this.cost(def);
       const existing = this.defenders.find((d) => !d.dead && d.lane === lane && d.defId === defId);
       if (existing) {
-        if (existing.level >= (def.maxLevel || 10) || !this.favor.spend(def.cost)) return false;
+        if (existing.level >= (def.maxLevel || 10) || !this.favor.spend(c)) return false;
         this.levelUp(existing);
         this.emit('build', { d: existing });
         return true;
       }
-      if (!this.favor.spend(def.cost)) return false;
+      if (!this.favor.spend(c)) return false;
       const slot = this.defenders.filter((d) => d.lane === lane).length;
       const x = this.fortX + 30 + Math.min(slot, 6) * 28;
       const d = makeDefender(def, lane, x, laneCenterY(level, lane));
       d.slot = slot;
+      if (this.mods.hpMult !== 1) { d.maxHp = Math.round(d.maxHp * this.mods.hpMult); d.hp = d.maxHp; }
       this.defenders.push(d);
       if (d.kind === 'favor') this.favor.bonusRate += d.gen;
       this.emit('build', { d });
@@ -100,9 +108,10 @@ export function createWorld(level, { rng, onEvent, mods = [] } = {}) {
     },
     deployLane(defId, lane) {
       const def = DEFENDER_BY_ID[defId];
-      if (!def || def.deploy !== 'lane' || !this.favor.spend(def.cost)) return false;
+      if (!def || def.deploy !== 'lane' || !this.favor.spend(this.cost(def))) return false;
       const u = makeUnit(def, lane, this.hopliteDmgMult);
       u.x = level.deployX; u.y = laneCenterY(level, lane);
+      if (this.mods.hpMult !== 1) { u.maxHp = Math.round(u.maxHp * this.mods.hpMult); u.hp = u.maxHp; }
       this.units.push(u);
       this.emit('deploy', { u });
       return true;
@@ -112,11 +121,19 @@ export function createWorld(level, { rng, onEvent, mods = [] } = {}) {
     powerReady() { return this.power.cdT <= 0; },
     castPowerAt(x, y) {
       if (this.power.cdT > 0) return false;
+      const dmg = this.power.dmg * this.mods.powerDmgMult;
+      const stun = this.power.stun + this.mods.powerStunAdd;
       const r2 = this.power.radius * this.power.radius;
+      const hit = [];
       for (const e of this.enemies) {
         if (e.dead) continue;
         const dx = e.x - x, dy = e.y - y;
-        if (dx * dx + dy * dy <= r2) { this.damageEnemy(e, this.power.dmg); e.stunT = Math.max(e.stunT, this.power.stun); }
+        if (dx * dx + dy * dy <= r2) { this.damageEnemy(e, dmg); e.stunT = Math.max(e.stunT, stun); hit.push(e); }
+      }
+      if (this.mods.powerChain > 0) {
+        const rest = this.enemies.filter((e) => !e.dead && !hit.includes(e))
+          .sort((a, b) => ((a.x - x) ** 2 + (a.y - y) ** 2) - ((b.x - x) ** 2 + (b.y - y) ** 2));
+        for (const e of rest.slice(0, this.mods.powerChain)) { this.damageEnemy(e, dmg * 0.7); e.stunT = Math.max(e.stunT, stun); this.emit('bolt', { x: e.x, y: e.y, radius: 38 }); }
       }
       this.power.cdT = this.power.cooldown;
       this.emit('bolt', { x, y, radius: this.power.radius });
@@ -126,9 +143,10 @@ export function createWorld(level, { rng, onEvent, mods = [] } = {}) {
     // ---- damage ----
     damageEnemy(e, dmg) {
       if (e.dead) return;
-      const real = Math.max(1, Math.round(dmg - e.armor));
+      const real = Math.max(1, Math.round(dmg * this.mods.allyDmgMult - e.armor));
       e.hp -= real; e.hitFlash = 0.12;
-      if (e.hp <= 0 && !e.dead) { e.dead = true; this.favor.add(e.bounty); this.killed++; this.emit('kill', { e }); }
+      if (this.mods.slowOnHit < 1) { e.slowMult = Math.min(e.slowMult, this.mods.slowOnHit); e.slowT = Math.max(e.slowT, 1.2); }
+      if (e.hp <= 0 && !e.dead) { e.dead = true; this.favor.add(Math.round(e.bounty * this.mods.bountyMult)); this.killed++; this.emit('kill', { e }); }
     },
     damageAlly(a, dmg) {
       if (a.dead) return;
@@ -167,10 +185,12 @@ export function createWorld(level, { rng, onEvent, mods = [] } = {}) {
       }
       if (best) {
         this.damageEnemy(best, g.dmg);
-        g.cdT = g.cooldown; g.flash = 0.18; g.boltTo = { x: best.x, y: best.y };
+        g.cdT = g.cooldown * this.mods.godCdMult; g.flash = 0.18; g.boltTo = { x: best.x, y: best.y };
         this.emit('godbolt', { x: best.x, y: best.y });
       }
     },
+    // ---- boons (picked between waves) ----
+    pickBoon(boon) { boon.apply(this); this.boons.push(boon.id); this.emit('boon', { boon }); },
 
     step(dt) {
       if (this.status !== 'playing') return;
@@ -183,8 +203,17 @@ export function createWorld(level, { rng, onEvent, mods = [] } = {}) {
       stepProjectiles(this, dt);
       this._stepGod(dt);
       if (this.power.cdT > 0) this.power.cdT = Math.max(0, this.power.cdT - dt);
-      if (this.gateHp <= 0) { this.status = 'lost'; this.emit('lose', {}); }
-      else if (this.spawner.done && this.enemies.length === 0) { this.status = 'won'; this.emit('win', {}); }
+      if (this.gateHp <= 0) { this.status = 'lost'; this.emit('lose', {}); return; }
+      if (this.spawner.spawnsDone() && this.enemies.length === 0) {
+        if (this.spawner.isLastWave) { this.status = 'won'; this.emit('win', {}); }
+        else { this.status = 'waveclear'; this.emit('waveclear', { wave: this.spawner.current + 1 }); }
+      }
+    },
+    // advance to the next wave after the player picks a boon and sends it
+    nextWave() {
+      if (this.spawner.isLastWave) return;
+      startWave(this, this.spawner.current + 1);
+      this.status = 'playing';
     },
   };
   return world;
