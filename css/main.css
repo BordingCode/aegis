@@ -1,0 +1,150 @@
+/* ============================================================
+   Aegis — design system. PvZ-style cartoon, Greek myth.
+   Bright, friendly, chunky. Landscape phone-first.
+   ============================================================ */
+
+:root {
+  /* palette */
+  --bg:      #0e2238;   /* deep aegean night */
+  --bg2:     #16395e;
+  --panel:   #1d4a74;
+  --ivory:   #f6efdd;   /* marble / parchment */
+  --ivory-2: #e7dcc0;
+  --gold:    #f0d27a;
+  --gold-2:  #e0b048;
+  --gold-d:  #b9892f;
+  --terra:   #e3794d;   /* terracotta */
+  --aegean:  #2f8fce;   /* sea / sky blue */
+  --olive:   #8ba94a;
+  --ink:     #20283a;   /* dark text on light */
+  --danger:  #d6483b;
+  --good:    #6fbf52;
+
+  --font-display: 'Cinzel', Georgia, serif;
+  --font-ui: 'Nunito', system-ui, -apple-system, sans-serif;
+
+  --radius: 16px;
+  --radius-sm: 10px;
+  --tap: 44px;
+  --shadow: 0 6px 0 rgba(0,0,0,.25), 0 10px 24px rgba(0,0,0,.35);
+
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ivory);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+#app, .app { position: fixed; inset: 0; }
+
+.screen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  padding: calc(12px + var(--safe-t)) calc(16px + var(--safe-r)) calc(12px + var(--safe-b)) calc(16px + var(--safe-l));
+}
+
+/* ---------- buttons ---------- */
+.btn {
+  font-family: var(--font-ui);
+  font-weight: 900;
+  font-size: 16px;
+  color: var(--ivory);
+  background: var(--panel);
+  border: 2px solid rgba(0,0,0,.25);
+  border-radius: var(--radius);
+  padding: 12px 20px;
+  min-height: var(--tap);
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(0,0,0,.3);
+  transition: transform .06s ease, box-shadow .06s ease, filter .1s ease;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.3); }
+.btn:hover { filter: brightness(1.07); }
+
+.btn-primary {
+  color: #3a2a07;
+  background: linear-gradient(180deg, var(--gold) 0%, var(--gold-2) 100%);
+  border-color: var(--gold-d);
+  text-shadow: 0 1px 0 rgba(255,255,255,.35);
+}
+.btn-ghost {
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.18);
+  box-shadow: none;
+  font-weight: 800;
+}
+.btn-ghost:active { transform: translateY(2px); }
+.btn-lg { font-size: 20px; padding: 16px 34px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; filter: grayscale(.4); }
+
+/* ---------- icons ---------- */
+.icon { display: inline-flex; line-height: 0; }
+.icon svg { display: block; }
+
+/* ---------- art wrapper (img with svg/emoji fallback) ---------- */
+.art { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+.art .art-img { width: 100%; height: 100%; object-fit: contain; }
+
+.muted { color: rgba(246,239,221,.6); font-weight: 700; }
+
+/* ---------- coin pill ---------- */
+.coin-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(0,0,0,.3); border: 2px solid var(--gold-d);
+  color: var(--gold); padding: 6px 12px; border-radius: 999px;
+  font-weight: 900; font-size: 15px;
+}
+
+/* ---------- splash ---------- */
+.splash {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px;
+  background: radial-gradient(120% 120% at 50% 30%, var(--bg2), var(--bg));
+  transition: opacity .5s ease;
+}
+.splash.hide { opacity: 0; pointer-events: none; }
+.splash-mark {
+  font-family: var(--font-display); font-weight: 900; letter-spacing: .18em;
+  font-size: clamp(40px, 9vw, 72px);
+  color: var(--gold);
+  text-shadow: 0 3px 0 var(--gold-d), 0 0 30px rgba(240,210,122,.4);
+}
+.splash-sub { color: rgba(246,239,221,.6); font-style: italic; font-weight: 600; }
+
+/* ---------- rotate hint (portrait only) ---------- */
+.rotate-hint {
+  position: fixed; inset: 0; z-index: 200; display: none;
+  flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+  background: var(--bg); text-align: center; padding: 24px;
+}
+.rotate-icon { font-size: 64px; color: var(--gold); animation: rot 2.4s ease-in-out infinite; }
+@keyframes rot { 0%,100% { transform: rotate(-20deg); } 50% { transform: rotate(70deg); } }
+
+@media (orientation: portrait) and (max-width: 900px) {
+  .rotate-hint { display: flex; }
+}
+
+/* ---------- stub screen ---------- */
+.screen.stub { align-items: center; justify-content: center; }
+.stub-card {
+  background: var(--panel); border: 2px solid rgba(0,0,0,.25);
+  border-radius: var(--radius); padding: 28px 32px; text-align: center;
+  display: flex; flex-direction: column; gap: 14px; box-shadow: var(--shadow);
+}
+.stub-card h2 { font-family: var(--font-display); }

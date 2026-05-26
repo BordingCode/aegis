@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5, user-scalable=no" />
+  <meta name="theme-color" content="#0e2238" />
+  <meta name="description" content="Aegis — a Greek-myth tower-defense roguelite. Hold the gate against the restless dead." />
+  <title>Aegis</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icons/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Nunito:wght@500;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/screens.css" />
+  <link rel="stylesheet" href="css/battle.css" />
+</head>
+<body>
+  <!-- Loading splash -->
+  <div id="splash" class="splash">
+    <div class="splash-mark">AEGIS</div>
+    <div class="splash-sub">lighting the braziers…</div>
+  </div>
+
+  <!-- Rotate hint for portrait phones (game is landscape) -->
+  <div id="rotate" class="rotate-hint" aria-hidden="true">
+    <div class="rotate-icon">⟳</div>
+    <p>Turn your device sideways to play</p>
+  </div>
+
+  <!-- Game mounts here -->
+  <main id="app" class="app" aria-live="polite"></main>
+
+  <!-- Floating FX / overlay layer -->
+  <div id="fx-layer" class="fx-layer" aria-hidden="true"></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

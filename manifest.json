@@ -1,0 +1,16 @@
+{
+  "name": "Aegis — Hold the Gate",
+  "short_name": "Aegis",
+  "description": "A Greek-myth tower-defense roguelite. Hold the gate against the restless dead.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0e2238",
+  "theme_color": "#0e2238",
+  "categories": ["games"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

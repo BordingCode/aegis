@@ -1,0 +1,13 @@
+{
+  "name": "aegis",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Aegis — a Greek-myth tower-defense roguelite PWA.",
+  "scripts": {
+    "serve": "python3 -m http.server 8099",
+    "art": "python3 tools/gen_art.py",
+    "manifest": "python3 tools/build_manifest.py",
+    "test": "node --test test/"
+  }
+}
