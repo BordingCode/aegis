@@ -42,7 +42,23 @@ function stub(name) {
   mount(s);
 }
 
+// Drive layout height from the REAL visible viewport (works on every mobile
+// browser, unlike the svh unit). The mobile address bar/toolbar overlaps the page
+// and changes the visible height; visualViewport.height is the truthful value.
+function fitViewport() {
+  const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+  if (h) document.documentElement.style.setProperty('--app-h', Math.round(h) + 'px');
+}
+fitViewport();
+window.addEventListener('resize', fitViewport);
+window.addEventListener('orientationchange', fitViewport);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', fitViewport);
+  window.visualViewport.addEventListener('scroll', fitViewport);
+}
+
 async function boot() {
+  fitViewport();
   Game.meta = loadMeta();
   await loadArtManifest();
   go('title');
