@@ -89,13 +89,49 @@ export function run(level, strategy, label) {
   return { status: w.status, pct, killed: w.killed, total: w.spawner.total, boons };
 }
 
+// Play the WHOLE run: map after map, carrying boons forward (re-applied to each
+// fresh world) exactly like the real game. `makeStrat` is a factory so every map
+// gets a fresh strategy closure (its action-timer resets per map).
+export function runFull(makeStrat, label = 'full-run') {
+  const carry = [];                 // boon ids accumulated across the run
+  let totalKilled = 0, mapsCleared = 0, status = 'won', boonIdx = 0;
+  for (let mi = 0; mi < LEVELS.length; mi++) {
+    const level = LEVELS[mi];
+    const w = createWorld(level, { rng: new RNG(7 + mi * 1013), onEvent: () => {} });
+    for (const id of carry) { const b = BOON_BY_ID[id]; if (b) { b.apply(w); w.boons.push(id); } }
+    const strategy = makeStrat();
+    let t = 0;
+    for (let s = 0; (w.status === 'playing' || w.status === 'waveclear') && t < 400; s++, t += STEP) {
+      if (w.status === 'waveclear') {
+        const id = BOON_PICKS[boonIdx++ % BOON_PICKS.length];
+        const b = BOON_BY_ID[id]; if (b) { w.pickBoon(b); carry.push(id); }
+        w.nextWave();
+        continue;
+      }
+      w.step(STEP);
+      strategy(w, t);
+    }
+    totalKilled += w.killed;
+    const pct = Math.round((w.gateHp / w.gateHpMax) * 100);
+    console.log(`  map ${mi + 1} ${level.id.padEnd(6)} ${w.status.toUpperCase().padEnd(5)} fort ${Math.max(0, Math.round(w.gateHp))}/${w.gateHpMax} (${String(pct).padStart(3)}%)  slain ${String(w.killed).padStart(3)}/${w.spawner.total}  scale ${level.enemyScale}  boons ${carry.length}`);
+    if (w.status !== 'won') { status = w.status; mapsCleared = mi; break; }
+    mapsCleared = mi + 1;
+  }
+  console.log(`${label.padEnd(12)} ${status.toUpperCase()} — cleared ${mapsCleared}/${LEVELS.length} maps, ${totalKilled} slain, ${carry.length} boons stacked`);
+  return { status, mapsCleared, total: LEVELS.length, killed: totalKilled, boons: carry.length };
+}
+
 // Only run the report when invoked directly (node test/sim.mjs), not on import.
 if (import.meta.url === `file://${process.argv[1]}`) {
   const level = LEVELS[0];
-  console.log('=== Aegis balance —', level.name, `(favor start ${level.favor.start}, rate ${level.favor.rate}/s) ===`);
+  console.log('=== Aegis balance — map 1:', level.name, `(favor start ${level.favor.start}, rate ${level.favor.rate}/s) ===`);
   run(level, noPlay, 'no-play');
   run(level, naive(0.5), 'naive');
   run(level, competent(0.6), 'slow(0.6s)');
   run(level, competent(0.4), 'competent');
   run(level, competent(0.25), 'fast(0.25s)');
+  console.log('\n=== Full run (boons persist across maps) ===');
+  runFull(() => competent(0.4), 'competent');
+  runFull(() => competent(0.9), 'sluggish');
+  runFull(() => competent(1.4), 'careless');
 }

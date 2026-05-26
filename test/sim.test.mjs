@@ -4,19 +4,26 @@
 //   npm test   (node --test test/)
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { LEVELS } from '../js/data/levels.js';
-import { run, noPlay, competent } from '../tools/sim.mjs';
+import { LEVELS, RUN_LENGTH } from '../js/data/levels.js';
+import { run, noPlay, competent, runFull } from '../tools/sim.mjs';
 
-test('Act 1: no defence loses', () => {
+test('Act 1 map 1: no defence loses', () => {
   assert.equal(run(LEVELS[0], noPlay, 'no-play').status, 'lost');
 });
 
-test('Act 1: competent play wins but takes fort damage (tough, not trivial)', () => {
+test('Act 1 map 1: competent play wins but takes fort damage (the early skill gate)', () => {
   const r = run(LEVELS[0], competent(0.4), 'competent');
   assert.equal(r.status, 'won', 'competent play should win');
   assert.ok(r.pct < 95, `fort should take real damage (tough); got ${r.pct}%`);
   assert.ok(r.killed >= r.total - 40, `should clear most enemies; got ${r.killed}/${r.total}`);
   assert.ok(r.boons >= 3, `should pick boons between waves; got ${r.boons}`);
+});
+
+test('Full run: competent play clears all maps, boons compounding across them', () => {
+  const r = runFull(() => competent(0.4), 'full');
+  assert.equal(r.status, 'won', 'competent should clear the whole run');
+  assert.equal(r.mapsCleared, RUN_LENGTH, `should clear every map; got ${r.mapsCleared}/${RUN_LENGTH}`);
+  assert.ok(r.boons >= 40, `boons should persist + stack across maps; got ${r.boons}`);
 });
 
 test('determinism: same seed → same result', () => {

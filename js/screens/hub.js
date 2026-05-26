@@ -63,6 +63,8 @@ export function renderHub() {
 
 function begin() {
   Sfx.resume(); // unlock WebAudio on this gesture so battle SFX play immediately
-  Game.run = { seed: (Date.now() ^ (Math.random() * 1e9)) >>> 0, levelIndex: 0 };
+  // A fresh run: map 0, no boons yet. Boons picked between waves persist across
+  // maps for the whole run; death restarts from map 0 (only Drachma carries over).
+  Game.run = { seed: (Date.now() ^ (Math.random() * 1e9)) >>> 0, mapIndex: 0, boons: [] };
   go('battle', { level: LEVELS[0] });
 }

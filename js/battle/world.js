@@ -60,6 +60,13 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [] } = {}) {
     spawnEnemy(id, lane) {
       const def = ENEMY_BY_ID[id]; if (!def) return;
       const e = makeEnemy(def, lane); e.x = level.spawnX; e.y = laneCenterY(level, lane);
+      const s = level.enemyScale || 1;       // later maps toughen foes; the run snowballs via boons, so foes must too
+      if (s !== 1) {
+        e.hp = Math.round(e.hp * s); e.maxHp = e.hp;
+        e.dmg = Math.round(e.dmg * s);
+        e.gateDmg = Math.max(1, Math.round(e.gateDmg * Math.pow(s, 0.85))); // leaks hurt more deep in the run
+        e.bounty = Math.max(1, Math.round(e.bounty * Math.pow(s, 0.55)));   // economy keeps partial pace, not full
+      }
       if (this.mods.spawnSlow < 1) { e.slowMult = this.mods.spawnSlow; e.slowT = 3; }
       this.enemies.push(e);
     },

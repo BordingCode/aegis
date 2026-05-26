@@ -140,6 +140,19 @@
 .build-card .tag { position: absolute; top: 4px; right: 7px; font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; color: rgba(246,239,221,.45); }
 .build-card .cost { display: inline-flex; align-items: center; gap: 3px; }
 
+/* map intro banner — fades out shortly after a map starts */
+.map-banner {
+  position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%);
+  z-index: 7; text-align: center; pointer-events: none;
+  display: flex; flex-direction: column; gap: 4px;
+  background: rgba(8,20,34,.55); border: 2px solid var(--gold-d);
+  border-radius: 16px; padding: 14px 28px; box-shadow: var(--shadow);
+  transition: opacity .7s ease, transform .7s ease;
+}
+.map-banner b { font-family: var(--font-display); font-size: 26px; color: var(--gold); letter-spacing: .02em; }
+.map-banner span { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; color: rgba(246,239,221,.8); }
+.map-banner.gone { opacity: 0; transform: translate(-50%, -70%); }
+
 .power-btn.ready { animation: pulseGlow 1.6s ease-in-out infinite; }
 .power-btn.armed { background: radial-gradient(circle at 50% 35%, #f0d27a, #d9a441); color: #3a2a07; border-color: var(--gold-d); }
 @keyframes pulseGlow {

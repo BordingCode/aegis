@@ -1,5 +1,5 @@
 /* Aegis service worker — network-first (fresh code online, full offline fallback). */
-const CACHE = 'aegis-v17';
+const CACHE = 'aegis-v18';
 const SHELL = [
   './',
   'index.html',
@@ -41,6 +41,8 @@ const SHELL = [
   'js/data/levels.js',
   'assets/manifest.json',
   'assets/backgrounds/act1.webp',
+  'assets/backgrounds/act2.webp',
+  'assets/backgrounds/act3.webp',
   'assets/ui/title.webp',
   'assets/defenders/shrine.webp',
   'assets/defenders/toxotes.webp',

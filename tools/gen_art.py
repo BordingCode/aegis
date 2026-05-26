@@ -34,6 +34,10 @@ SPRITES = {
 SCENES = {
     "backgrounds/act1": ("ancient Athens city walls and the great Dipylon stone gate at golden hour, marble ramparts, "
         "distant white temples and cypress trees, blue sky, empty grassy foreground", 1280, 720),
+    "backgrounds/act2": ("the summit of Mount Olympus above the clouds, gleaming golden marble temple of the gods, "
+        "tall fluted columns, sunlit clouds and blue sky, a wide empty marble courtyard foreground", 1280, 720),
+    "backgrounds/act3": ("the gates of the Greek Underworld, a dark cavern of black basalt and rivers of glowing lava, "
+        "eerie green fire braziers, looming bronze gate of Hades, a barren ashen foreground", 1280, 720),
     "ui/title": ("epic poster key art, a lone Greek demigod hero stands before the towering gates of the Underworld, "
         "storm clouds and golden lightning, Mount Olympus far behind, dramatic and cinematic", 1280, 720),
 }

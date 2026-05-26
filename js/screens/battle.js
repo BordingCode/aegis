@@ -12,10 +12,10 @@ import { renderWorld } from '../engine/render.js';
 import { Sfx } from '../engine/audio.js';
 import { createWorld } from '../battle/world.js';
 import { metaMods } from '../run/meta.js';
-import { LEVELS, LEVEL_BY_ID, laneAtY } from '../data/levels.js';
+import { LEVELS, LEVEL_BY_ID, RUN_LENGTH, ACTS, ROMAN, laneAtY } from '../data/levels.js';
 import { DEFENDERS, DEFENDER_BY_ID } from '../data/defenders.js';
 import { POWER_BY_ID } from '../data/powers.js';
-import { rollBoons } from '../data/boons.js';
+import { rollBoons, BOON_BY_ID } from '../data/boons.js';
 import { saveMeta } from '../save.js';
 import { icon } from '../icons.js';
 import { go } from '../main.js';
@@ -29,7 +29,10 @@ function statLine(def) {
 }
 
 export function renderBattle(opts = {}) {
-  const level = opts.level || LEVEL_BY_ID[opts.levelId] || LEVELS[0];
+  const mapIndex = (Game.run && Game.run.mapIndex) || 0;
+  const level = opts.level || LEVEL_BY_ID[opts.levelId] || LEVELS[mapIndex] || LEVELS[0];
+  const act = ACTS[(level.act || 1) - 1];
+  const mapLabel = `Act ${ROMAN[level.act || 1]} · ${level.name}`;
 
   // ---------- DOM ----------
   const s = screen('battle');
@@ -75,15 +78,28 @@ export function renderBattle(opts = {}) {
     tray.append(card);
   }
 
-  s.append(canvas, hudTop, powerRail, infoEl, tray, sendNextBtn);
+  // brief "Act I · The Dipylon Gate — Map 1/9" banner that fades on map start
+  const banner = el('div.map-banner', {}, [
+    el('b', {}, mapLabel),
+    el('span', {}, `Map ${mapIndex + 1} / ${RUN_LENGTH}`),
+  ]);
+
+  s.append(canvas, hudTop, powerRail, infoEl, tray, sendNextBtn, banner);
   mount(s);
+  setTimeout(() => banner.classList.add('gone'), 2600);
+  setTimeout(() => banner.remove(), 3400);
 
   // ---------- engine ----------
   const view = new CanvasView(canvas, level.world.w, level.world.h);
-  const seed = (Game.run && Game.run.seed) || (Date.now() >>> 0);
+  const seed = ((Game.run && Game.run.seed) || (Date.now() >>> 0)) + mapIndex * 1013;
   Game.rng = new RNG(seed);
   let fx = []; let floats = [];
   const world = createWorld(level, { rng: Game.rng, onEvent, mods: metaMods(Game.meta) });
+  // Carry the run's boons into this map: re-apply each blessing to the fresh world
+  // (no units exist yet, so HP/attack mods land on everything spawned here).
+  if (Game.run && Array.isArray(Game.run.boons)) {
+    for (const id of Game.run.boons) { const b = BOON_BY_ID[id]; if (b) { b.apply(world); world.boons.push(id); } }
+  }
   Game.battle = world; Game.screen = 'battle';
   window.__battle = world;
 
@@ -229,25 +245,60 @@ export function renderBattle(opts = {}) {
     ])]);
     s.append(overlay);
   }
+  function startFreshRun() {
+    cleanup();
+    Game.run = { seed: (Date.now() ^ (Math.random() * 1e9)) >>> 0, mapIndex: 0, boons: [] };
+    renderBattle({ level: LEVELS[0] });
+  }
   function endBattle(kind) {
     if (ended) return; ended = true; loop.pause(); closeMenu(); selectedDefender = null; hideInfo();
+    sendNextBtn.style.display = 'none';
     const win = kind === 'win';
-    const base = win ? (level.reward && level.reward.meta) || 0 : 0;
-    const earned = base + Math.floor(world.killed / 3); // Drachma always accrues, scaled by foes slain
+    const lastMap = mapIndex >= RUN_LENGTH - 1;
+
+    // Drachma: per-map reward on a win, a clear bonus for finishing the run, and a
+    // smaller consolation scaled by foes slain on a loss — it always accrues.
+    let earned = Math.floor(world.killed / (win ? 4 : 3));
+    if (win) earned += (level.reward && level.reward.meta) || 0;
+    if (win && lastMap) earned += 60; // run-clear bonus
+
     if (Game.meta) {
       Game.meta.currency += earned;
-      if (win) Game.meta.progress.wins++;
-      Game.meta.progress.runs++;
+      Game.meta.progress.bestLevel = Math.max(Game.meta.progress.bestLevel || 0, mapIndex + 1);
+      if (win && lastMap) Game.meta.progress.wins++;
+      if (!win || lastMap) Game.meta.progress.runs++; // a run ends on death or on the final clear
       saveMeta(Game.meta);
     }
     hideOverlay();
+
+    let title, body, actions;
+    if (win && !lastMap) {
+      // advance to the next map, carrying every boon
+      title = 'The line holds!';
+      body = `${act.name} — ${mapLabel} cleared. +${earned} Drachma. ${Game.run.boons.length} blessing${Game.run.boons.length === 1 ? '' : 's'} carry onward.`;
+      actions = [
+        el('button.btn.btn-primary', { dataset: { testid: 'btn-advance' }, onclick: () => { cleanup(); Game.run.mapIndex = mapIndex + 1; renderBattle({ level: LEVELS[Game.run.mapIndex] }); } }, 'March on  ▶'),
+        el('button.btn.btn-ghost', { dataset: { testid: 'btn-tohub' }, onclick: () => { Game.run = null; cleanup(); go('hub'); } }, 'Abandon run'),
+      ];
+    } else if (win && lastMap) {
+      title = 'The gates are sealed!';
+      body = `The dead are turned back and the seals hold. Run complete — +${earned} Drachma.`;
+      actions = [
+        el('button.btn.btn-primary', { dataset: { testid: 'btn-tohub' }, onclick: () => { Game.run = null; cleanup(); go('hub'); } }, 'Return to the Hub'),
+      ];
+    } else {
+      title = 'The fort has fallen';
+      body = `${world.killed} of the dead felled before the gate broke. +${earned} Drachma. The demigod returns to the Styx — the run begins anew.`;
+      actions = [
+        el('button.btn.btn-primary', { dataset: { testid: 'btn-restart' }, onclick: startFreshRun }, 'Begin a new run'),
+        el('button.btn.btn-ghost', { dataset: { testid: 'btn-tohub' }, onclick: () => { Game.run = null; cleanup(); go('hub'); } }, 'To the Hub'),
+      ];
+    }
+
     overlay = el('div.overlay', {}, [el('div.panel' + (win ? '.win' : '.lose'), {}, [
-      el('h2', {}, win ? 'Victory!' : 'The fort has fallen'),
-      el('p', {}, win ? `The dead are turned back. +${earned} Drachma earned.` : `${world.killed} of the dead felled. +${earned} Drachma. The demigod returns to the Styx…`),
-      el('div.row', {}, [
-        el('button.btn.btn-primary', { dataset: { testid: 'btn-tohub' }, onclick: () => { cleanup(); go('hub'); } }, 'To the Hub'),
-        el('button.btn.btn-ghost', { dataset: { testid: 'btn-retry' }, onclick: () => { cleanup(); renderBattle({ level }); } }, 'Retry'),
-      ]),
+      el('h2', {}, title),
+      el('p', {}, body),
+      el('div.row', {}, actions),
     ])]);
     s.append(overlay);
     syncDebug({ status: world.status });
@@ -259,7 +310,7 @@ export function renderBattle(opts = {}) {
     clearSelection(); closeMenu(); selectedDefender = null;
     if (mode === 'target') { mode = 'idle'; hideInfo(); refreshPower(); }
     const offered = rollBoons(world.rng, world.boons, 3);
-    const cards = offered.map((b) => el('button.boon-card', { dataset: { testid: 'boon-' + b.id }, onclick: () => { world.pickBoon(b); hideOverlay(); showBreather(); } }, [
+    const cards = offered.map((b) => el('button.boon-card', { dataset: { testid: 'boon-' + b.id }, onclick: () => { world.pickBoon(b); if (Game.run) (Game.run.boons || (Game.run.boons = [])).push(b.id); hideOverlay(); showBreather(); } }, [
       el('span.boon-glyph', {}, [icon(b.icon || 'laurel', { size: 30 })]),
       el('span.boon-god', {}, b.god),
       el('b', {}, b.name),
