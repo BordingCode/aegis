@@ -9,6 +9,7 @@ import { CanvasView } from '../engine/canvas.js';
 import { GameLoop } from '../engine/loop.js';
 import { attachInput } from '../engine/input.js';
 import { renderWorld } from '../engine/render.js';
+import { Sfx } from '../engine/audio.js';
 import { createWorld } from '../battle/world.js';
 import { metaMods } from '../run/meta.js';
 import { LEVELS, LEVEL_BY_ID, laneAtY } from '../data/levels.js';
@@ -44,8 +45,9 @@ export function renderBattle(opts = {}) {
   const waveStat = el('div.hud-stat', { title: 'Wave' }, [icon('laurel', { size: 16 }), waveVal]);
   const slainStat = el('div.hud-stat', { title: 'Slain / total' }, [icon('skull', { size: 16 }), slainVal]);
   const speedBtn = el('button.hud-btn', { title: 'Speed', dataset: { testid: 'btn-speed' }, onclick: toggleSpeed }, '1×');
+  const muteBtn = el('button.hud-btn', { title: 'Sound', dataset: { testid: 'btn-mute' }, onclick: toggleMute }, [icon(Sfx.isMuted() ? 'mute' : 'sound', { size: 18 })]);
   const pauseBtn = el('button.hud-btn', { title: 'Pause', dataset: { testid: 'btn-pause' }, onclick: togglePause }, [icon('pause', { size: 18 })]);
-  const hudTop = el('div.hud-top', {}, [favorStat, gateStat, waveStat, slainStat, el('div.hud-spacer'), speedBtn, pauseBtn]);
+  const hudTop = el('div.hud-top', {}, [favorStat, gateStat, waveStat, slainStat, el('div.hud-spacer'), muteBtn, speedBtn, pauseBtn]);
   const sendNextBtn = el('button.btn.btn-primary.send-next', { dataset: { testid: 'btn-send-wave' }, style: { display: 'none' }, onclick: () => sendNext() }, 'Send next wave  ▶');
 
   // power rail
@@ -100,12 +102,18 @@ export function renderBattle(opts = {}) {
 
   function onEvent(type, data) {
     if (type === 'favorFloat') floats.push({ x: data.x, y: data.y, text: '+' + data.amt, t: 0.9, life: 0.9 });
-    else if (type === 'bolt') fx.push({ type: 'bolt', x: data.x, y: data.y, r: data.radius, t: 0.4, life: 0.4 });
-    else if (type === 'godbolt') fx.push({ type: 'godbolt', x: data.x, y: data.y, t: 0.25, life: 0.25 });
+    else if (type === 'bolt') { fx.push({ type: 'bolt', x: data.x, y: data.y, r: data.radius, t: 0.4, life: 0.4 }); Sfx.zap(); }
+    else if (type === 'godbolt') { fx.push({ type: 'godbolt', x: data.x, y: data.y, t: 0.25, life: 0.25 }); Sfx.godzap(); }
     else if (type === 'impact') fx.push({ type: 'ring', x: data.x, y: data.y, r: data.splash || 12, t: 0.3, life: 0.3 });
-    else if (type === 'waveclear') showBoonPicker(data.wave);
-    else if (type === 'win') endBattle('win');
-    else if (type === 'lose') endBattle('lose');
+    else if (type === 'kill') Sfx.kill();
+    else if (type === 'gate') Sfx.gate();
+    else if (type === 'deploy') Sfx.deploy();
+    else if (type === 'build') Sfx.build();
+    else if (type === 'sell') Sfx.sell();
+    else if (type === 'boon') Sfx.boon();
+    else if (type === 'waveclear') { Sfx.waveclear(); showBoonPicker(data.wave); }
+    else if (type === 'win') { Sfx.win(); endBattle('win'); }
+    else if (type === 'lose') { Sfx.lose(); endBattle('lose'); }
   }
   function stepFx() {
     if (fx.length) { for (const f of fx) f.t -= 1 / 60; fx = fx.filter((f) => f.t > 0); }
@@ -123,6 +131,7 @@ export function renderBattle(opts = {}) {
   function hideInfo() { infoEl.style.display = 'none'; }
 
   function selectCard(id) {
+    Sfx.resume(); Sfx.click();
     closeMenu(); selectedDefender = null;
     if (selectedBuild === id) { clearSelection(); return; }
     selectedBuild = id;
@@ -155,6 +164,7 @@ export function renderBattle(opts = {}) {
 
   // ---------- tap ----------
   function onTap(w) {
+    Sfx.resume(); // first gesture unlocks WebAudio (autoplay policy)
     if (ended || paused) return;
     if (mode === 'target') { world.castPowerAt(w.x, w.y); mode = 'idle'; hideInfo(); refreshPower(); return; }
     if (selectedBuild) {
@@ -205,6 +215,7 @@ export function renderBattle(opts = {}) {
   }
 
   function toggleSpeed() { speed = speed === 1 ? 2 : 1; loop.setSpeed(speed); speedBtn.textContent = speed + '×'; if (Game.meta) Game.meta.settings.speed = speed; }
+  function toggleMute() { const m = Sfx.toggleMute(); muteBtn.replaceChildren(icon(m ? 'mute' : 'sound', { size: 18 })); }
   function togglePause() { if (ended) return; paused = !paused; if (paused) { loop.pause(); showPause(); } else { loop.resume(); hideOverlay(); } pauseBtn.replaceChildren(icon(paused ? 'play' : 'pause', { size: 18 })); }
 
   // ---------- overlays ----------

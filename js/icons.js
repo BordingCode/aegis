@@ -23,6 +23,8 @@ const P = {
   heart:   '<path d="M12 20s-7-4.5-9.2-9A4.7 4.7 0 0 1 12 6.5 4.7 4.7 0 0 1 21.2 11C19 15.5 12 20 12 20z"/>',
   feather: '<path d="M20 4C9 4 4 11 4 18l3-3c3 0 12-2 13-11zM7 17l6-6"/>',
   horns:   '<path d="M4 6c0 6 4 9 8 9s8-3 8-9c-3 1-5 3-8 3s-5-2-8-3z"/>',
+  sound:   '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 8.5a4 4 0 0 1 0 7M18.5 6a7 7 0 0 1 0 12"/>',
+  mute:    '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l4 6M21 9l-4 6"/>',
 };
 
 export function icon(name, { size = 22, cls = '' } = {}) {
