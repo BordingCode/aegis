@@ -17,6 +17,7 @@ import { metaMods } from '../run/meta.js';
 import { LEVELS, LEVEL_BY_ID, RUN_LENGTH, ACTS, ROMAN, laneAtY } from '../data/levels.js';
 import { DEFENDERS, DEFENDER_BY_ID } from '../data/defenders.js';
 import { rollBoons, BOON_BY_ID } from '../data/boons.js';
+import { RELIC_BY_ID } from '../data/relics.js';
 import { saveMeta, saveRun, clearRun } from '../save.js';
 import { icon } from '../icons.js';
 import { go } from '../main.js';
@@ -45,7 +46,7 @@ export function renderBattle(opts = {}) {
   let fx = []; let floats = [];
 
   const loadoutGods = (Game.run && Game.run.gods && Game.run.gods.length) ? Game.run.gods : null;
-  const world = createWorld(level, { rng: Game.rng, onEvent, mods: metaMods(Game.meta), loadout: { gods: loadoutGods } });
+  const world = createWorld(level, { rng: Game.rng, onEvent, mods: metaMods(Game.meta), loadout: { gods: loadoutGods }, relics: (Game.meta && Game.meta.relics) || [] });
   // Carry the run's boons into this map: re-apply each blessing to the fresh world
   // (no units exist yet, so HP/attack mods land on everything spawned here).
   if (Game.run && Array.isArray(Game.run.boons)) {
@@ -307,6 +308,13 @@ export function renderBattle(opts = {}) {
     if (Game.run) Game.run.earned = (Game.run.earned || 0) + earned;
     const runTotal = (Game.run && Game.run.earned) || earned;
 
+    // a relic reward, won the first time you clear a relic mission/boss
+    let gainedRelic = null;
+    if (win && level.reward && level.reward.relic && Game.meta) {
+      const rid = level.reward.relic;
+      if (!Game.meta.relics.includes(rid) && RELIC_BY_ID[rid]) { Game.meta.relics.push(rid); gainedRelic = RELIC_BY_ID[rid]; }
+    }
+
     if (Game.meta) {
       Game.meta.currency += earned;
       Game.meta.progress.bestLevel = Math.max(priorBest, reached);
@@ -315,6 +323,7 @@ export function renderBattle(opts = {}) {
       saveMeta(Game.meta);
     }
     hideOverlay();
+    const relicLine = gainedRelic ? ` You claim a relic — ${gainedRelic.name}!` : '';
 
     // offensive wins read differently from holding a defense
     const beat = world.mode === 'assault' ? 'The stronghold is broken!' : world.mode === 'boss' ? 'The beast is slain!' : null;
@@ -323,7 +332,7 @@ export function renderBattle(opts = {}) {
     if (win && !lastMap) {
       // advance to the next map, carrying every boon + loadout (run stays saved)
       title = beat || 'The line holds!';
-      body = `${mapLabel} cleared. +${earned} Drachma. ${Game.run.boons.length} blessing${Game.run.boons.length === 1 ? '' : 's'} carry onward.`;
+      body = `${mapLabel} cleared. +${earned} Drachma.${relicLine} ${Game.run.boons.length} blessing${Game.run.boons.length === 1 ? '' : 's'} carry onward.`;
       actions = [
         el('button.btn.btn-primary', { dataset: { testid: 'btn-advance' }, onclick: () => { cleanup(); Game.run.mapIndex = mapIndex + 1; renderBattle({ level: LEVELS[Game.run.mapIndex] }); } }, 'March on  ▶'),
         el('button.btn.btn-ghost', { dataset: { testid: 'btn-tohub' }, onclick: () => { Game.run = null; clearRun(); cleanup(); go('hub'); } }, 'Abandon run'),
@@ -331,7 +340,7 @@ export function renderBattle(opts = {}) {
     } else if (win && lastMap) {
       Game.run = null; clearRun();
       title = beat || 'The gates are sealed!';
-      body = `The dead are turned back and Hades' seals hold. You have conquered the full gauntlet — ${runTotal} Drachma earned across the whole run. Glory to the demigod!`;
+      body = `The dead are turned back and Hades' seals hold. You have conquered the full gauntlet — ${runTotal} Drachma earned across the whole run.${relicLine} Glory to the demigod!`;
       actions = [
         el('button.btn.btn-primary', { dataset: { testid: 'btn-tohub' }, onclick: () => { cleanup(); go('hub'); } }, 'Return to the Hub'),
       ];

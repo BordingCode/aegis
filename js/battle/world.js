@@ -12,6 +12,7 @@ import { stepBoss } from './bosses.js';
 import { ENEMY_BY_ID } from '../data/enemies.js';
 import { DEFENDER_BY_ID } from '../data/defenders.js';
 import { POWERS, POWER_BY_GOD } from '../data/powers.js';
+import { RELIC_BY_ID } from '../data/relics.js';
 import { laneCenterY, laneAtY } from '../data/levels.js';
 import { dist2 } from '../engine/vec.js';
 
@@ -47,7 +48,7 @@ function makeTarget(level) {
     hp: t.hp, hpMax: t.hp, hitFlash: 0, resist: { ranged: 0.5 } };
 }
 
-export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout } = {}) {
+export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout, relics = [] } = {}) {
   // Loadout gods become the tap-powers; default to every god (sim / back-compat).
   const godIds = (loadout && loadout.gods && loadout.gods.length) ? loadout.gods : POWERS.map((p) => p.god);
   const world = {
@@ -295,5 +296,7 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout 
       this.status = 'playing';
     },
   };
+  // permanent mythic relics — applied once, up-front, every battle
+  for (const id of relics) { const r = RELIC_BY_ID[id]; if (r) r.apply(world); }
   return world;
 }

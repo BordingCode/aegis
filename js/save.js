@@ -12,6 +12,7 @@ export function defaultMeta() {
     unlockedDefenders: ['shrine', 'hoplite', 'toxotes', 'oracle'], // starters; rest bought in the hub
     unlockedPowers: ['zeus_bolt'],
     unlockedGods: ['zeus'],               // gods you can bring; more bought in the hub
+    relics: [],                           // permanent mythic items earned from bosses/key missions
     upgrades: {},                         // { upgradeId: true } purchased permanent upgrades
     progress: { bestLevel: 0, runs: 0, wins: 0 },
     settings: { speed: 1 },
@@ -31,6 +32,7 @@ export function loadMeta() {
           unlockedDefenders: m.unlockedDefenders || d.unlockedDefenders,
           unlockedPowers: m.unlockedPowers || d.unlockedPowers,
           unlockedGods: m.unlockedGods || d.unlockedGods,
+          relics: m.relics || d.relics,
           upgrades: { ...(m.upgrades || {}) },
           progress: { ...d.progress, ...(m.progress || {}) },
           settings: { ...d.settings, ...(m.settings || {}) },

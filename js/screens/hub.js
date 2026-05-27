@@ -12,6 +12,7 @@ import { saveMeta, loadRun, clearRun } from '../save.js';
 import { UPGRADES } from '../data/upgrades.js';
 import { GOD_BY_ID } from '../data/powers.js';
 import { DEFENDER_BY_ID } from '../data/defenders.js';
+import { RELIC_BY_ID } from '../data/relics.js';
 import { go } from '../main.js';
 
 const GOD_UNLOCKS = [
@@ -83,6 +84,15 @@ export function renderHub() {
       () => !!meta.upgrades[u.id], () => { meta.upgrades[u.id] = true; }));
   }
 
+  // --- relics earned (mythic items from bosses/key missions) ---
+  const owned = (meta.relics || []).map((id) => RELIC_BY_ID[id]).filter(Boolean);
+  const relicStrip = owned.length
+    ? el('div.up-list', {}, owned.map((r) => el('div.up-card.is-owned', { dataset: { testid: 'relic-' + r.id } }, [
+        el('span.glyph', {}, [icon(r.icon || 'laurel', { size: 24 })]),
+        el('div.txt', {}, [el('b', {}, r.name), el('span', {}, r.desc)]),
+      ])))
+    : el('p.hub-sub', { style: { margin: '2px 0 0' } }, 'No relics yet — slay bosses and clear great deeds to claim them.');
+
   // --- run actions ---
   const saved = loadRun();
   const actions = el('div.hub-actions', {}, [
@@ -98,6 +108,7 @@ export function renderHub() {
     el('h2.muster-h', {}, 'Gods'), godList,
     el('h2.muster-h', {}, 'Warriors'), unitList,
     el('h2.muster-h', {}, 'The base'), upList,
+    el('h2.muster-h', {}, 'Relics'), relicStrip,
     actions,
   );
   refreshAfford();
