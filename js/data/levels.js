@@ -102,17 +102,26 @@ const ENEMY_SETS = {
   3: { bulk: ['satyr', 'wraith'], armor: ['wraith', 'skeleton'], flyer: ['griffin'], boss: ['cerberus', 'minotaur', 'cyclops'] },
 };
 
+// How many bosses a wave fields, by boss tier (0 = Act 1 … 4 = Hades finale).
+function bossCount(tier, w, W, last) {
+  const h2 = w >= W - 2, h3 = w >= W - 3, h5 = w >= W - 5;
+  if (tier <= 0) return last ? 1 : 0;
+  if (tier === 1) return last ? 2 : (h2 ? 1 : 0);
+  if (tier === 2) return last ? 3 : (h2 ? 1 : 0);
+  if (tier === 3) return last ? 3 : (h3 ? 2 : (h5 ? 1 : 0));
+  return last ? 4 : (h3 ? 2 : (h5 ? 1 : 0)); // tier 4 — full boss rush
+}
+
 // Escalating discrete waves from a difficulty index D and Act number. Bulk foes are
 // the swarm; armour ramps in from wave 2, flyers from wave 3; bosses anchor the
-// last waves (more of them in later Acts).
-function genWaves(D, act, W) {
+// last waves, ramping up per map via bossTier.
+function genWaves(D, act, W, bossTier) {
   const set = ENEMY_SETS[act] || ENEMY_SETS[1];
   const pick = (arr, i) => arr[i % arr.length];
   const waves = [];
   for (let w = 0; w < W; w++) {
     const wave = [];
     const last = w === W - 1;
-    const heavy = w >= W - 2;
     const rot = (i) => LANE_ORDER[(w + i) % 5];
     const bulk = Math.round(7 + w * 2 + D * 1.4);
     const armor = w >= 1 ? Math.round(2 + w * 0.7 + D * 0.7) : 0;
@@ -122,14 +131,15 @@ function genWaves(D, act, W) {
     wave.push({ enemy: pick(set.bulk, w + 1), lane: rot(1), count: bulk - half, gap: 0.5, delay: 1.5 });
     if (armor) wave.push({ enemy: pick(set.armor, w), lane: rot(2), count: armor, gap: 0.9, delay: 0.6 });
     if (flyer) wave.push({ enemy: pick(set.flyer, w), lane: rot(3), count: flyer, gap: 0.8, delay: 1 });
-    const minos = last ? act : (heavy && act >= 2 ? act - 1 : 0);
-    for (let m = 0; m < minos; m++) wave.push({ enemy: pick(set.boss, m), lane: LANE_ORDER[m % 5], count: 1, delay: 2 + m * 3 });
+    const minos = bossCount(bossTier, w, W, last);
+    for (let m = 0; m < minos; m++) wave.push({ enemy: pick(set.boss, m), lane: LANE_ORDER[m % 5], count: 1, delay: 2 + m * 2.5 });
     waves.push(wave);
   }
   return waves;
 }
 
-function makeLevel({ id, act, name, D, scale, W, favorStart = 80, favorRate = 3.4, reward = 20 }) {
+function makeLevel({ id, act, name, D, scale, W, boss, favorStart = 80, favorRate = 3.4, reward = 20 }) {
+  const tier = boss != null ? boss : (act === 1 ? 0 : act === 2 ? 1 : 3);
   return {
     ...GEO,
     grid: { ...GEO.grid },
@@ -139,7 +149,7 @@ function makeLevel({ id, act, name, D, scale, W, favorStart = 80, favorRate = 3.
     bg: ACTS[act - 1].bg,
     enemyScale: scale,
     favor: { start: favorStart, rate: favorRate, max: 360 },
-    waves: genWaves(D, act, W),
+    waves: genWaves(D, act, W, tier),
     reward: { meta: reward },
   };
 }
@@ -153,9 +163,9 @@ export const LEVELS = [
   makeLevel({ id: 'a2_m1', act: 2, name: 'The Cloudward Stair', D: 7, scale: 2.2, W: 7, favorStart: 90, reward: 28 }),
   makeLevel({ id: 'a2_m2', act: 2, name: 'The Marble Terraces', D: 8, scale: 2.7, W: 8, favorStart: 90, reward: 32 }),
   makeLevel({ id: 'a2_m3', act: 2, name: 'The Throne Approach', D: 9, scale: 3.2, W: 8, favorStart: 95, reward: 38 }),
-  makeLevel({ id: 'a3_m1', act: 3, name: 'The Acheron Crossing', D: 10, scale: 3.8, W: 8, favorStart: 100, reward: 44 }),
-  makeLevel({ id: 'a3_m2', act: 3, name: 'The Asphodel Fields', D: 11, scale: 4.4, W: 9, favorStart: 100, reward: 50 }),
-  makeLevel({ id: 'a3_m3', act: 3, name: 'The Gates of Hades', D: 13, scale: 5.0, W: 9, favorStart: 105, reward: 90 }),
+  makeLevel({ id: 'a3_m1', act: 3, name: 'The Acheron Crossing', D: 10, scale: 4.2, W: 8, boss: 2, favorStart: 100, reward: 44 }),
+  makeLevel({ id: 'a3_m2', act: 3, name: 'The Asphodel Fields', D: 12, scale: 5.6, W: 9, boss: 3, favorStart: 100, reward: 52 }),
+  makeLevel({ id: 'a3_m3', act: 3, name: 'The Gates of Hades', D: 16, scale: 9.5, W: 9, boss: 4, favorStart: 110, reward: 100 }),
 ];
 
 export const LEVEL_BY_ID = Object.fromEntries(LEVELS.map((l) => [l.id, l]));

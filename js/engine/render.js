@@ -53,6 +53,7 @@ export function renderWorld(view, world, opts = {}) {
   const W = level.world.w, H = level.world.h;
   const lh = laneHeight(level);
   const now = performance.now() / 1000;
+  const raging = world.armyBuff && world.armyBuff.t > 0; // Ares War Cry active
   view.begin();
 
   // background
@@ -105,10 +106,18 @@ export function renderWorld(view, world, opts = {}) {
 
   // collect drawables and sort by y so lower (closer) ones overlap higher ones
   const foot = (e) => e.y + 16;
+  // War Cry — a pulsing rally ring under your forces while the buff is up
+  const rageRing = (x, fy) => {
+    if (!raging) return;
+    const p = 0.6 + 0.4 * Math.sin(now * 8);
+    ctx.beginPath(); ctx.ellipse(x, fy - 2, 22, 8, 0, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(214,72,59,${0.45 + p * 0.4})`; ctx.lineWidth = 3; ctx.stroke();
+  };
   // defenders
   for (const d of world.defenders) {
     if (d.dead) continue;
     const fy = foot(d);
+    rageRing(d.x, fy);
     if (d.fireFlash > 0) { ctx.beginPath(); ctx.arc(d.x, fy - 30, 26, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,210,.35)'; ctx.fill(); }
     drawEntity(ctx, d.defId, d.x, fy, 56, d.art, false, d.color);
     if (d.maxHp) drawHpBar(ctx, d.x, fy - 64, 36, Math.max(0, d.hp / d.maxHp), true);
@@ -121,6 +130,7 @@ export function renderWorld(view, world, opts = {}) {
   // troops
   for (const u of world.units) {
     if (u.dead) continue; const fy = foot(u);
+    rageRing(u.x, fy);
     drawEntity(ctx, u.defId, u.x, fy, 54, u.art, false, u.color);
     drawHpBar(ctx, u.x, fy - 62, 34, Math.max(0, u.hp / u.maxHp), true);
   }
