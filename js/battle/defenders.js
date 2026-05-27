@@ -67,6 +67,9 @@ export function stepDefenders(world, dt) {
       if (d.cdT <= 0) {
         const target = rangedTarget(world, d);
         if (target) { world.spawnProjectile(d, target); d.cdT = d.cooldown; d.fireFlash = 0.12; }
+        else if (world.target && world.target.hp > 0 && (world.target.x - d.x) <= d.range) {
+          world.spawnProjectile(d, world.target, true); d.cdT = d.cooldown; d.fireFlash = 0.12; // siege the stronghold/boss
+        }
       }
     }
   }

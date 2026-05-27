@@ -31,11 +31,16 @@ export function stepUnits(world, dt) {
     if (u.hitFlash > 0) u.hitFlash -= dt;
     u.y = world.laneCenterY(u.lane);
     const target = targetFor(world, u);
+    const struct = world.target; // offensive maps: a stronghold/boss to assault on the right
     if (target) {
       u.atkT -= dt * u.fireRateMult * world.attackSpeedMult();
       if (u.atkT <= 0) { world.damageEnemy(target, u.dmg, u.dmgType); u.atkT = u.atkCd; }
+    } else if (struct && struct.hp > 0 && u.x >= struct.x - u.contact) {
+      u.atkT -= dt * u.fireRateMult * world.attackSpeedMult();
+      if (u.atkT <= 0) { world.damageTarget(u.dmg, u.dmgType); u.atkT = u.atkCd; }
     } else {
-      u.x = Math.min(rightLimit, u.x + u.speed * dt);
+      const limit = struct ? Math.min(rightLimit, struct.x - u.contact) : rightLimit;
+      u.x = Math.min(limit, u.x + u.speed * dt);
     }
   }
   if (anyDead) world.units = world.units.filter((u) => !u.dead);

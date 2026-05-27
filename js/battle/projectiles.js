@@ -7,10 +7,11 @@ import { dist2 } from '../engine/vec.js';
 export function createProjectilePool() {
   return new Pool(
     () => ({}),
-    (o, d, target) => {
+    (o, d, target, struct) => {
       o.x = d.x; o.y = d.y - 18;
       o.target = target; o.tx = target.x; o.ty = target.y;
       o.speed = 480; o.dmg = d.dmg; o.splash = d.splash || 0; o.proj = d.proj; o.type = d.dmgType || 'ranged';
+      o.struct = !!struct; // aimed at the offensive target (stronghold/boss), not an enemy
     },
   );
 }
@@ -23,7 +24,9 @@ export function stepProjectiles(world, step) {
     const len = Math.hypot(dx, dy);
     const stepLen = p.speed * step;
     if (len <= stepLen || len < 6) {
-      if (p.splash > 0) {
+      if (p.struct) {
+        world.damageTarget(p.dmg, p.type);
+      } else if (p.splash > 0) {
         const s2 = p.splash * p.splash;
         for (const e of world.enemies) { if (!e.dead && dist2(p.tx, p.ty, e.x, e.y) <= s2) world.damageEnemy(e, p.dmg, p.type); }
       } else if (p.target && !p.target.dead) {

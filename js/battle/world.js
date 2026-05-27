@@ -8,6 +8,7 @@ import { makeUnit, stepUnits } from './units.js';
 import { makeDefender, stepDefenders } from './defenders.js';
 import { createProjectilePool, stepProjectiles } from './projectiles.js';
 import { createSpawner, stepSpawner, startWave } from './spawner.js';
+import { stepBoss } from './bosses.js';
 import { ENEMY_BY_ID } from '../data/enemies.js';
 import { DEFENDER_BY_ID } from '../data/defenders.js';
 import { POWERS, POWER_BY_GOD } from '../data/powers.js';
@@ -32,11 +33,27 @@ function makePower(def, metaMods) {
   };
 }
 
+// Offensive maps put a destructible target on the right: a stronghold to smash
+// (resists arrows — bring melee/gods) or a living boss (handled in bosses.js).
+function makeTarget(level) {
+  const t = level.target; if (!t) return null;
+  const y = level.world.h / 2;
+  if (t.kind === 'boss') {
+    const def = ENEMY_BY_ID[t.bossId] || {};
+    return { kind: 'boss', bossId: t.bossId, def, art: def.art, color: def.color, name: def.name || 'Boss',
+      x: level.spawnX - 70, y, hp: t.hp, hpMax: t.hp, hitFlash: 0, cdT: 4, phase: 1 };
+  }
+  return { kind: 'stronghold', name: t.name || 'Stronghold', x: level.spawnX - 20, y,
+    hp: t.hp, hpMax: t.hp, hitFlash: 0, resist: { ranged: 0.5 } };
+}
+
 export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout } = {}) {
   // Loadout gods become the tap-powers; default to every god (sim / back-compat).
   const godIds = (loadout && loadout.gods && loadout.gods.length) ? loadout.gods : POWERS.map((p) => p.god);
   const world = {
     level, rng,
+    mode: level.mode || 'defense',
+    target: makeTarget(level),       // null for defense; stronghold/boss for offensive maps
     fortX: level.fort.x,
     laneCenterY: (lane) => laneCenterY(level, lane),
 
@@ -150,6 +167,7 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout 
       } else if (p.cast === 'lane') {                // Apollo — scorch a whole lane
         const lane = laneAtY(level, y);
         for (const e of this.enemies) if (!e.dead && e.lane === lane) this.damageEnemy(e, dmg);
+        if (this.target && this.target.hp > 0) this.damageTarget(dmg); // the beam reaches the back wall
         this.emit('sunlance', { lane, y: laneCenterY(level, lane) });
       } else {                                       // point — Zeus (stun) / Poseidon (slow)
         const stun = p.stun ? p.stun + this.mods.powerStunAdd : 0;
@@ -170,6 +188,7 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout 
             .sort((a, b) => ((a.x - x) ** 2 + (a.y - y) ** 2) - ((b.x - x) ** 2 + (b.y - y) ** 2));
           for (const e of rest.slice(0, this.mods.powerChain)) { this.damageEnemy(e, dmg * 0.7); if (stun) e.stunT = Math.max(e.stunT, stun); this.emit('bolt', { x: e.x, y: e.y, radius: 38 }); }
         }
+        if (this.target && this.target.hp > 0) { const dx = this.target.x - x, dy = this.target.y - y; if (dx * dx + dy * dy <= r2) this.damageTarget(dmg); }
         this.emit('bolt', { x, y, radius: p.radius });
       }
       p.cdT = p.cooldown;
@@ -199,7 +218,17 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout 
     },
     hitGate(e) { this.gateHp = Math.max(0, this.gateHp - e.gateDmg); this.emit('gate', { e }); },
 
-    spawnProjectile(d, target) { this.projectiles.spawn(d, target); },
+    // your forces chipping the offensive target (stronghold/boss). Divine (powers) ignores
+    // its resist; ranged is resisted by a stronghold (bring melee/gods to siege it).
+    damageTarget(dmg, type) {
+      const t = this.target; if (!t || t.hp <= 0) return;
+      const resist = (type && t.resist && t.resist[type]) ? t.resist[type] : 1;
+      const buffD = this.armyBuff.t > 0 ? this.armyBuff.dmgMult : 1;
+      t.hp = Math.max(0, t.hp - Math.max(1, Math.round(dmg * this.mods.allyDmgMult * buffD * resist)));
+      t.hitFlash = 0.12;
+    },
+
+    spawnProjectile(d, target, struct) { this.projectiles.spawn(d, target, struct); },
 
     // ---- sell (level-up is via recruitFort) ----
     sell(d) {
@@ -242,12 +271,21 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout 
       stepEnemies(this, dt);
       stepProjectiles(this, dt);
       this._stepGod(dt);
+      if (this.target && this.target.kind === 'boss') stepBoss(this, dt);
       for (const p of this.powers) if (p.cdT > 0) p.cdT = Math.max(0, p.cdT - dt);
       if (this.armyBuff.t > 0) this.armyBuff.t = Math.max(0, this.armyBuff.t - dt);
       if (this.gateHp <= 0) { this.status = 'lost'; this.emit('lose', {}); return; }
+      // offensive maps: win by destroying the target (can happen any time)
+      if (this.target && this.target.hp <= 0) { this.status = 'won'; this.emit('win', {}); return; }
       if (this.spawner.spawnsDone() && this.enemies.length === 0) {
-        if (this.spawner.isLastWave) { this.status = 'won'; this.emit('win', {}); }
-        else { this.status = 'waveclear'; this.emit('waveclear', { wave: this.spawner.current + 1 }); }
+        if (this.mode === 'defense') {
+          if (this.spawner.isLastWave) { this.status = 'won'; this.emit('win', {}); }
+          else { this.status = 'waveclear'; this.emit('waveclear', { wave: this.spawner.current + 1 }); }
+        } else if (!this.spawner.isLastWave) {
+          // assault/boss: a breather + boon between garrison/add waves…
+          this.status = 'waveclear'; this.emit('waveclear', { wave: this.spawner.current + 1 });
+        }
+        // …on the last wave the garrison is spent — keep fighting until the target falls.
       }
     },
     // advance to the next wave after the player picks a boon and sends it

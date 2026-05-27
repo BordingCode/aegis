@@ -1,5 +1,5 @@
 /* Aegis service worker — network-first (fresh code online, full offline fallback). */
-const CACHE = 'aegis-v23';
+const CACHE = 'aegis-v24';
 const SHELL = [
   './',
   'index.html',
@@ -34,6 +34,7 @@ const SHELL = [
   'js/battle/defenders.js',
   'js/battle/projectiles.js',
   'js/battle/spawner.js',
+  'js/battle/bosses.js',
   'js/battle/world.js',
   'js/run/meta.js',
   'js/data/enemies.js',

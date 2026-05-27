@@ -138,21 +138,24 @@ function genWaves(D, act, W, bossTier) {
   return waves;
 }
 
-function makeLevel({ id, act, name, D, scale, W, boss, favorStart = 80, favorRate = 3.4, favorMax, reward = 20 }) {
+function makeLevel({ id, act, name, D, scale, W, boss, mode = 'defense', target, favorStart = 80, favorRate = 3.4, favorMax, reward = 20 }) {
   const tier = boss != null ? boss : (act === 1 ? 0 : act === 2 ? 1 : 3);
   const cap = favorMax != null ? favorMax : 360 + (act - 1) * 160; // later Acts let you bank more
-  return {
+  const lvl = {
     ...GEO,
     grid: { ...GEO.grid },
     fort: { x: 178, hp: 50 },
     god: { id: 'zeus', range: 210, cooldown: 3.0, dmg: 22 },
-    id, act, name,
+    id, act, name, mode,
     bg: ACTS[act - 1].bg,
     enemyScale: scale,
     favor: { start: favorStart, rate: favorRate, max: cap },
     waves: genWaves(D, act, W, tier),
     reward: { meta: reward },
   };
+  // offensive maps: a destructible target on the right (stronghold to smash, or a boss to slay)
+  if (target) lvl.target = target;
+  return lvl;
 }
 
 // The full run: 3 Acts × 3 maps. The closer to Hades, the tougher the foes — but
@@ -167,6 +170,14 @@ export const LEVELS = [
   makeLevel({ id: 'a3_m1', act: 3, name: 'The Acheron Crossing', D: 10, scale: 4.2, W: 8, boss: 2, favorStart: 100, reward: 44 }),
   makeLevel({ id: 'a3_m2', act: 3, name: 'The Asphodel Fields', D: 12, scale: 5.6, W: 9, boss: 3, favorStart: 100, reward: 52 }),
   makeLevel({ id: 'a3_m3', act: 3, name: 'The Gates of Hades', D: 16, scale: 9.5, W: 9, boss: 4, favorStart: 110, reward: 100 }),
+
+  // --- offensive battles (Phase 1: the new modes, slotted into the run) ---
+  // ASSAULT — push your army right and smash the stronghold before the fort falls.
+  makeLevel({ id: 'a3_assault', act: 3, name: 'Storm the Bronze Gates', mode: 'assault',
+    target: { kind: 'stronghold', hp: 2600 }, D: 8, scale: 3.4, W: 7, boss: 1, favorStart: 130, favorMax: 700, reward: 80 }),
+  // BOSS — slay Cerberus, the three-headed hound that guards the gates of Hades.
+  makeLevel({ id: 'a3_boss', act: 3, name: 'Cerberus, Hound of Hades', mode: 'boss',
+    target: { kind: 'boss', bossId: 'cerberus', hp: 5200 }, D: 6, scale: 2.6, W: 6, boss: 0, favorStart: 130, favorMax: 700, reward: 130 }),
 ];
 
 export const LEVEL_BY_ID = Object.fromEntries(LEVELS.map((l) => [l.id, l]));

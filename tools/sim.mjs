@@ -3,7 +3,7 @@
 // REAL Favor (no cheats). Reports win/lose, fort damage, slain, timing.
 //   node test/sim.mjs
 import { createWorld } from '../js/battle/world.js';
-import { LEVELS } from '../js/data/levels.js';
+import { LEVELS, LEVEL_BY_ID } from '../js/data/levels.js';
 import { BOON_BY_ID } from '../js/data/boons.js';
 import { RNG } from '../js/rng.js';
 
@@ -40,6 +40,8 @@ export function competent(interval = 0.4) {
     for (let l = 0; l < lanes; l++) if (enemyByLane[l].length && archLvl[l] < 3 && f >= 60) return void w.recruitFort('toxotes', l);
     // 5. keep threatened lanes blocked further out
     for (let l = 0; l < lanes; l++) if (minEnemyX(l) < 800 && unitByLane[l] < 1 && f >= 55) return void w.deployLane('hoplite', l);
+    // 5b. offensive maps: keep pushing — feed troops down every lane toward the target
+    if (w.target && w.target.hp > 0) { for (let l = 0; l < lanes; l++) if (unitByLane[l] < 2 && f >= 55) return void w.deployLane('hoplite', l); }
     // 6. cast a ready point-power on the densest cluster
     const pw = w.powers && w.powers.find((p) => p.cast === 'point' && w.powerReady(p));
     if (pw && w.enemies.length >= 3) {
@@ -87,7 +89,8 @@ export function run(level, strategy, label) {
     if (firstLeak === null && w.gateHp < w.gateHpMax) firstLeak = t;
   }
   const pct = Math.round((w.gateHp / w.gateHpMax) * 100);
-  console.log(`${label.padEnd(12)} ${w.status.toUpperCase().padEnd(5)}  fort ${Math.max(0, Math.round(w.gateHp))}/${w.gateHpMax} (${pct}%)  wave ${w.spawner.current + 1}/${w.spawner.waveCount}  slain ${w.killed}/${w.spawner.total}  boons ${boons}  builds ${builds} troops ${deploys} casts ${casts}`);
+  const tgt = w.target ? `  target ${Math.max(0, Math.round(w.target.hp))}/${w.target.hpMax}` : '';
+  console.log(`${label.padEnd(12)} ${w.status.toUpperCase().padEnd(5)}  fort ${Math.max(0, Math.round(w.gateHp))}/${w.gateHpMax} (${pct}%)  wave ${w.spawner.current + 1}/${w.spawner.waveCount}  slain ${w.killed}/${w.spawner.total}${tgt}  boons ${boons} troops ${deploys} casts ${casts}`);
   return { status: w.status, pct, killed: w.killed, total: w.spawner.total, boons };
 }
 
@@ -133,6 +136,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   run(level, competent(0.6), 'slow(0.6s)');
   run(level, competent(0.4), 'competent');
   run(level, competent(0.25), 'fast(0.25s)');
+  console.log('\n=== Offensive maps (standalone, fresh, Zeus-only) ===');
+  run(LEVEL_BY_ID['a3_assault'], competent(0.4), 'assault');
+  run(LEVEL_BY_ID['a3_boss'], competent(0.4), 'boss');
   console.log('\n=== Full run (boons persist across maps) ===');
   runFull(() => competent(0.4), 'competent');
   runFull(() => competent(0.9), 'sluggish');

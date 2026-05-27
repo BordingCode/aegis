@@ -25,6 +25,27 @@ function drawEntity(ctx, id, x, y, h, art, faceLeft, color) {
   drawCreature(ctx, id, x, y, h, faceLeft, color);
 }
 
+// The offensive target: a big boss creature, or a stone stronghold to besiege.
+function drawTarget(ctx, t, H) {
+  if (t.kind === 'boss') {
+    drawEntity(ctx, t.bossId, t.x, H * 0.5 + 96, 130, t.art, true, t.color);
+    if (t.hitFlash > 0) { ctx.save(); ctx.globalAlpha = 0.4; ctx.beginPath(); ctx.arc(t.x, H * 0.5, 86, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore(); }
+    drawHpBar(ctx, t.x, H * 0.5 - 110, 120, Math.max(0, t.hp / t.hpMax), false);
+    return;
+  }
+  // stronghold — a dark stone keep with battlements and a barred gate
+  const w = 76, x = t.x - 18;
+  ctx.fillStyle = t.hitFlash > 0 ? '#7a6a50' : '#4a4030';
+  ctx.fillRect(x, 46, w, H - 92);
+  ctx.fillStyle = '#3a3226';
+  for (let i = 0; i < 5; i++) ctx.fillRect(x + i * 16, 34, 11, 20);
+  ctx.fillStyle = '#241d12';
+  ctx.fillRect(x + w / 2 - 18, H / 2 - 34, 36, 68);
+  ctx.strokeStyle = '#5a4a30'; ctx.lineWidth = 2;
+  for (let i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(x + w / 2 - 18 + i * 9, H / 2 - 34); ctx.lineTo(x + w / 2 - 18 + i * 9, H / 2 + 34); ctx.stroke(); }
+  drawHpBar(ctx, t.x, 24, 120, Math.max(0, t.hp / t.hpMax), false);
+}
+
 function drawHpBar(ctx, x, y, w, ratio, friendly) {
   const h = 5;
   ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(x - w / 2 - 1, y - 1, w + 2, h + 2);
@@ -95,6 +116,9 @@ export function renderWorld(view, world, opts = {}) {
   // fort + Zeus on the left
   drawFort(ctx, world.fortX, H);
   drawZeus(ctx, world.fortX - 34, H * 0.5 + 36, world.god.flash);
+
+  // offensive target on the right (stronghold to smash / boss to slay)
+  if (world.target && world.target.hp > 0) drawTarget(ctx, world.target, H);
 
   // oracle auras (persistent so support reads)
   for (const d of world.defenders) {

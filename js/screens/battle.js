@@ -108,6 +108,16 @@ export function renderBattle(opts = {}) {
     tray.append(card);
   }
 
+  // offensive maps: a prominent target (stronghold/boss) HP bar across the top
+  let targetFill = null, targetBar = null;
+  if (world.target) {
+    targetFill = el('i');
+    targetBar = el('div.target-bar' + (world.target.kind === 'boss' ? '.boss' : ''), {}, [
+      el('span.tb-name', {}, world.target.name || (world.target.kind === 'boss' ? 'Boss' : 'Stronghold')),
+      el('span.tb-track', {}, [targetFill]),
+    ]);
+  }
+
   // brief "Act I · The Dipylon Gate — Map 1/9" banner that fades on map start
   const banner = el('div.map-banner', {}, [
     el('b', {}, mapLabel),
@@ -115,6 +125,7 @@ export function renderBattle(opts = {}) {
   ]);
 
   s.append(canvas, hudTop, powerRail, infoEl, tray, sendNextBtn, banner);
+  if (targetBar) s.append(targetBar);
   mount(s);
   setTimeout(() => banner.classList.add('gone'), 2600);
   setTimeout(() => banner.remove(), 3400);
@@ -135,6 +146,7 @@ export function renderBattle(opts = {}) {
     else if (type === 'warcry') { fx.push({ type: 'ring', x: level.fort.x + 40, y: level.world.h / 2, r: 60, t: 0.5, life: 0.5 }); Sfx.boon(); }
     else if (type === 'heal') floats.push({ x: data.x, y: data.y, text: '✚', t: 0.7, life: 0.7 });
     else if (type === 'spawn') markSeen(data.id);
+    else if (type === 'bossSlam') { fx.push({ type: 'ring', x: level.spawnX - 220, y: data.y, r: 64, t: 0.5, life: 0.5 }); Sfx.gate(); }
     else if (type === 'kill') Sfx.kill();
     else if (type === 'gate') Sfx.gate();
     else if (type === 'deploy') Sfx.deploy();
@@ -251,6 +263,7 @@ export function renderBattle(opts = {}) {
     slainVal.textContent = `${world.killed}/${world.spawner.total}`;
     waveVal.textContent = `${world.spawner.current + 1}/${world.spawner.waveCount}`;
     for (const { p, cd } of powerBtns) { const f = p.cooldown > 0 ? p.cdT / p.cooldown : 0; cd.style.setProperty('--cd', (f * 360) + 'deg'); }
+    if (targetFill && world.target) targetFill.style.width = Math.max(0, (world.target.hp / world.target.hpMax) * 100) + '%';
     if (++affClock % 6 === 0) { refreshTray(); refreshPowers(); }
     if (menuEl && selectedDefender) { const p = worldToScreen(selectedDefender.x, selectedDefender.y - 56); menuEl.style.left = p.left + 'px'; menuEl.style.top = p.top + 'px'; }
     syncDebug({ favor: Math.floor(world.favor.value), gateHp: world.gateHp, enemies: world.enemies.length, units: world.units.length, defenders: world.defenders.length, killed: world.killed, status: world.status });
@@ -303,10 +316,13 @@ export function renderBattle(opts = {}) {
     }
     hideOverlay();
 
+    // offensive wins read differently from holding a defense
+    const beat = world.mode === 'assault' ? 'The stronghold is broken!' : world.mode === 'boss' ? 'The beast is slain!' : null;
+
     let title, body, actions;
     if (win && !lastMap) {
       // advance to the next map, carrying every boon + loadout (run stays saved)
-      title = 'The line holds!';
+      title = beat || 'The line holds!';
       body = `${mapLabel} cleared. +${earned} Drachma. ${Game.run.boons.length} blessing${Game.run.boons.length === 1 ? '' : 's'} carry onward.`;
       actions = [
         el('button.btn.btn-primary', { dataset: { testid: 'btn-advance' }, onclick: () => { cleanup(); Game.run.mapIndex = mapIndex + 1; renderBattle({ level: LEVELS[Game.run.mapIndex] }); } }, 'March on  ▶'),
@@ -314,7 +330,7 @@ export function renderBattle(opts = {}) {
       ];
     } else if (win && lastMap) {
       Game.run = null; clearRun();
-      title = 'The gates are sealed!';
+      title = beat || 'The gates are sealed!';
       body = `The dead are turned back and Hades' seals hold. You have conquered the full gauntlet — ${runTotal} Drachma earned across the whole run. Glory to the demigod!`;
       actions = [
         el('button.btn.btn-primary', { dataset: { testid: 'btn-tohub' }, onclick: () => { cleanup(); go('hub'); } }, 'Return to the Hub'),
