@@ -53,6 +53,19 @@ test('a run round-trips through saveRun → loadRun, and clears', () => {
   assert.equal(loadRun(), null);
 });
 
+test('Campaign: every mission is clearable standalone by competent play', async () => {
+  const { REALMS } = await import('../js/data/campaign.js');
+  const KIT = {
+    earth: { gods: ['zeus'], relics: [] },
+    underworld: { gods: ['zeus', 'poseidon'], relics: ['achilles_spear', 'golden_fleece'] },
+    olympus: { gods: ['zeus', 'poseidon'], relics: ['achilles_spear', 'golden_fleece', 'winged_sandals', 'medusa_gaze'] },
+  };
+  for (const realm of REALMS) for (const m of realm.missions) {
+    const r = run(m.level, competent(0.4), m.id, KIT[realm.id]);
+    assert.equal(r.status, 'won', `${realm.id}/${m.id} (${m.level.mode || 'defense'}) should be clearable; got ${r.status}`);
+  }
+});
+
 test('determinism: same seed → same result', () => {
   const a = run(LEVELS[0], competent(0.4), 'a');
   const b = run(LEVELS[0], competent(0.4), 'b');

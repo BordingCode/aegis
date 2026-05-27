@@ -66,17 +66,17 @@ function typhon(world, b, fast) {
   } else if (m === 1) {
     const lane = world.rng.int(0, lanes(world) - 1);
     world.emit('bossSlam', { lane, y: world.laneCenterY(lane) });
-    const dmg = fast ? 120 : 80;
+    const dmg = fast ? 75 : 50;
     for (const u of world.units) if (!u.dead && u.lane === lane) world.damageAlly(u, dmg);
     for (const d of world.defenders) if (!d.dead && d.lane === lane) world.damageAlly(d, dmg);
   } else {
     world.spawnEnemy('skeleton', world.rng.int(0, lanes(world) - 1));
     world.spawnEnemy('satyr', world.rng.int(0, lanes(world) - 1));
     if (fast) { // phase 2 — a firestorm across every lane
-      for (let l = 0; l < lanes(world); l++) { world.emit('bossSlam', { lane: l, y: world.laneCenterY(l) }); for (const u of world.units) if (!u.dead && u.lane === l) world.damageAlly(u, 50); }
+      for (let l = 0; l < lanes(world); l++) { world.emit('bossSlam', { lane: l, y: world.laneCenterY(l) }); for (const u of world.units) if (!u.dead && u.lane === l) world.damageAlly(u, 32); }
     }
   }
-  b.cdT = fast ? 3.5 : 5.5;
+  b.cdT = fast ? 4.5 : 6.5;
 }
 
 const BEHAVIOURS = { cerberus, hydra, typhon };

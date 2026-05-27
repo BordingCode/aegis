@@ -4,6 +4,7 @@
 //   node test/sim.mjs
 import { createWorld } from '../js/battle/world.js';
 import { LEVELS, LEVEL_BY_ID } from '../js/data/levels.js';
+import { REALMS } from '../js/data/campaign.js';
 import { BOON_BY_ID } from '../js/data/boons.js';
 import { RNG } from '../js/rng.js';
 
@@ -67,9 +68,8 @@ export function naive(interval = 0.5) {
 }
 
 // ---- runner --------------------------------------------------------------
-export function run(level, strategy, label) {
-  // a fresh player on map 1 has only Zeus unlocked
-  const w = createWorld(level, { rng: new RNG(7), onEvent: () => {}, loadout: { gods: ['zeus'] } });
+export function run(level, strategy, label, opts = {}) {
+  const w = createWorld(level, { rng: new RNG(7), onEvent: () => {}, loadout: { gods: opts.gods || ['zeus'] }, relics: opts.relics || [] });
   let minFort = w.gateHp, firstLeak = null, builds = 0, deploys = 0, casts = 0;
   const _b = w.recruitFort.bind(w), _d = w.deployLane.bind(w), _c = w.castPower.bind(w);
   w.recruitFort = (...a) => { const r = _b(...a); if (r) builds++; return r; };
@@ -125,6 +125,21 @@ export function runFull(makeStrat, label = 'full-run') {
   }
   console.log(`${label.padEnd(12)} ${status.toUpperCase()} — cleared ${mapsCleared}/${LEVELS.length} maps, ${totalKilled} slain, ${carry.length} boons stacked`);
   return { status, mapsCleared, total: LEVELS.length, killed: totalKilled, boons: carry.length };
+}
+
+// Per-realm "kit" a player would plausibly hold: gods unlocked + relics earned by then.
+const KIT = {
+  earth: { gods: ['zeus'], relics: [] },
+  underworld: { gods: ['zeus', 'poseidon'], relics: ['achilles_spear', 'golden_fleece'] },
+  olympus: { gods: ['zeus', 'poseidon'], relics: ['achilles_spear', 'golden_fleece', 'winged_sandals', 'medusa_gaze'] },
+};
+// Sim every campaign mission STANDALONE (fresh, per-mission boons, realm kit).
+export function simCampaign() {
+  for (const realm of REALMS) {
+    const kit = KIT[realm.id] || KIT.earth;
+    console.log(`\n=== ${realm.name}  (gods ${kit.gods.join('+')}, relics ${kit.relics.length}) ===`);
+    for (const m of realm.missions) run(m.level, competent(0.4), `${m.id}`.padEnd(14) + (m.level.mode || 'defense'), kit);
+  }
 }
 
 // Only run the report when invoked directly (node test/sim.mjs), not on import.
