@@ -78,6 +78,7 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout 
       }
       if (this.mods.spawnSlow < 1) { e.slowMult = this.mods.spawnSlow; e.slowT = 3; }
       this.enemies.push(e);
+      this.emit('spawn', { id });
     },
     cost(def) { return Math.max(1, Math.round(def.cost * this.mods.costMult)); },
     // Post a non-melee unit to a lane on the fort. If one of this type already

@@ -30,7 +30,7 @@ export function renderTitle() {
       ]),
     ]),
     el('div.title-foot', {}, [
-      el('span.muted', {}, 'A Greek-myth tower-defense roguelite · build 21'),
+      el('span.muted', {}, 'A Greek-myth tower-defense roguelite · build 22'),
     ]),
   );
 

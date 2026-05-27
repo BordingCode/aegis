@@ -134,6 +134,7 @@ export function renderBattle(opts = {}) {
     else if (type === 'sunlance') { for (let i = 0; i < 5; i++) fx.push({ type: 'bolt', x: level.fort.x + 130 + i * 200, y: data.y, r: 52, t: 0.45, life: 0.45 }); Sfx.zap(); }
     else if (type === 'warcry') { fx.push({ type: 'ring', x: level.fort.x + 40, y: level.world.h / 2, r: 60, t: 0.5, life: 0.5 }); Sfx.boon(); }
     else if (type === 'heal') floats.push({ x: data.x, y: data.y, text: '✚', t: 0.7, life: 0.7 });
+    else if (type === 'spawn') markSeen(data.id);
     else if (type === 'kill') Sfx.kill();
     else if (type === 'gate') Sfx.gate();
     else if (type === 'deploy') Sfx.deploy();
@@ -147,6 +148,11 @@ export function renderBattle(opts = {}) {
   function stepFx() {
     if (fx.length) { for (const f of fx) f.t -= 1 / 60; fx = fx.filter((f) => f.t > 0); }
     if (floats.length) { for (const f of floats) f.t -= 1 / 60; floats = floats.filter((f) => f.t > 0); }
+  }
+  // record a foe in the bestiary the first time it is sighted
+  function markSeen(id) {
+    const seen = Game.meta && Game.meta.codex && Game.meta.codex.enemiesSeen;
+    if (seen && !seen.includes(id)) { seen.push(id); saveMeta(Game.meta); }
   }
 
   // ---------- selection / info ----------

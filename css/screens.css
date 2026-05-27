@@ -84,6 +84,26 @@
 .sel-card.is-locked { cursor: default; background: #3a3214; }
 .sel-card.is-locked .tick { opacity: 1; }
 
+/* ---------- codex / bestiary ---------- */
+.screen.codex { display: block; background: #0e2238; min-height: 100vh; min-height: 100svh; }
+.codex-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; margin-bottom: 6px; }
+.codex-card { display: flex; gap: 10px; align-items: center; background: #16395e; border-radius: 10px; padding: 9px 11px; min-width: 0; }
+.codex-card.is-locked { background: #14233a; opacity: .8; }
+.codex-card .art, .codex-art { flex: 0 0 auto; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.25); border-radius: 10px; overflow: hidden; }
+.codex-card .art-img { width: 100%; height: 100%; object-fit: contain; }
+.codex-emoji { font-size: 30px; line-height: 1; }
+.codex-card.is-locked .codex-emoji { color: #5a6b86; font-weight: 900; }
+.codex-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; line-height: 1.2; }
+.codex-name { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.codex-name b { font-size: 14px; }
+.codex-tag { font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; border-radius: 6px; padding: 1px 6px; }
+.codex-tag.boss { background: #6a2230; color: #ffd9c0; }
+.codex-tag.fly { background: #244a6a; color: #cfe6ff; }
+.codex-tag.armor { background: #4a4326; color: #f0e2b0; }
+.codex-stats { display: flex; gap: 10px; flex-wrap: wrap; }
+.codex-stat { display: inline-flex; align-items: center; gap: 2px; font-size: 12px; font-weight: 800; color: var(--gold); }
+.codex-blurb { font-size: 11px; color: #c9c2ad; font-weight: 700; }
+
 /* ---------- how-to ---------- */
 .screen.howto { display: block; background: #0e2238; min-height: 100vh; min-height: 100svh; }
 .howto-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }

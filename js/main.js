@@ -8,6 +8,7 @@ import { renderTitle } from './screens/title.js';
 import { renderHub } from './screens/hub.js';
 import { renderHowTo } from './screens/howto.js';
 import { renderPrepare } from './screens/prepare.js';
+import { renderCodex } from './screens/codex.js';
 import { renderBattle } from './screens/battle.js';
 
 // Screen registry. Unknown names show a stub.
@@ -16,6 +17,7 @@ const ROUTES = {
   hub: renderHub,
   howto: renderHowTo,
   prepare: renderPrepare,
+  codex: renderCodex,
   battle: renderBattle,
 };
 

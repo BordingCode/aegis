@@ -1,5 +1,5 @@
 /* Aegis service worker — network-first (fresh code online, full offline fallback). */
-const CACHE = 'aegis-v21';
+const CACHE = 'aegis-v22';
 const SHELL = [
   './',
   'index.html',
@@ -18,6 +18,7 @@ const SHELL = [
   'js/screens/hub.js',
   'js/screens/howto.js',
   'js/screens/prepare.js',
+  'js/screens/codex.js',
   'js/screens/battle.js',
   'js/engine/vec.js',
   'js/engine/pool.js',

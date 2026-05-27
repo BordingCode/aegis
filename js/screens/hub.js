@@ -84,6 +84,7 @@ export function renderHub() {
   // --- run actions ---
   const saved = loadRun();
   const actions = el('div.hub-actions', {}, [
+    el('button.btn.btn-ghost', { dataset: { testid: 'btn-codex' }, onclick: () => go('codex') }, 'Bestiary'),
     el('button.btn.btn-ghost', { onclick: () => go('howto') }, 'How to Play'),
     ...(saved ? [el('button.btn.btn-ghost', { dataset: { testid: 'btn-continue' }, onclick: continueRun }, `Continue · Map ${saved.mapIndex + 1}`)] : []),
     el('button.btn.btn-primary.btn-lg', { dataset: { testid: 'btn-begin' }, onclick: newRun }, saved ? 'New Run' : 'Begin the Defense'),
