@@ -17,6 +17,7 @@ export function defaultMeta() {
     progress: { bestLevel: 0, runs: 0, wins: 0 },
     settings: { speed: 1 },
     codex: { enemiesSeen: [], lore: [] },
+    campaign: { realm: 'earth', cleared: { earth: [], underworld: [], olympus: [] } },
   };
 }
 
@@ -37,6 +38,9 @@ export function loadMeta() {
           progress: { ...d.progress, ...(m.progress || {}) },
           settings: { ...d.settings, ...(m.settings || {}) },
           codex: { ...d.codex, ...(m.codex || {}) },
+          campaign: m.campaign && m.campaign.cleared
+            ? { realm: m.campaign.realm || 'earth', cleared: { ...d.campaign.cleared, ...m.campaign.cleared } }
+            : d.campaign,
         };
       }
     }

@@ -54,7 +54,8 @@ export function renderBattle(opts = {}) {
   }
   Game.battle = world; Game.screen = 'battle';
   window.__battle = world;
-  if (Game.run) { if (Game.run.earned == null) Game.run.earned = 0; saveRun(Game.run); } // resumable point = start of this map
+  // campaign missions persist via meta.campaign (the map); only the legacy linear run is resumable
+  if (Game.run && !Game.mission) { if (Game.run.earned == null) Game.run.earned = 0; saveRun(Game.run); }
 
   let mode = 'idle';            // idle | placeFort | placeLane | target
   let selectedBuild = null;
@@ -119,10 +120,13 @@ export function renderBattle(opts = {}) {
     ]);
   }
 
-  // brief "Act I · The Dipylon Gate — Map 1/9" banner that fades on map start
+  // brief intro banner that fades on map start
+  const bannerSub = Game.mission
+    ? ({ defense: 'Hold the gate', assault: 'Break the gate', boss: 'Slay the beast' }[Game.mission.type] || '')
+    : `Map ${mapIndex + 1} / ${RUN_LENGTH}`;
   const banner = el('div.map-banner', {}, [
-    el('b', {}, mapLabel),
-    el('span', {}, `Map ${mapIndex + 1} / ${RUN_LENGTH}`),
+    el('b', {}, Game.mission ? level.name : mapLabel),
+    el('span', {}, bannerSub),
   ]);
 
   s.append(canvas, hudTop, powerRail, infoEl, tray, sendNextBtn, banner);
@@ -327,6 +331,30 @@ export function renderBattle(opts = {}) {
 
     // offensive wins read differently from holding a defense
     const beat = world.mode === 'assault' ? 'The stronghold is broken!' : world.mode === 'boss' ? 'The beast is slain!' : null;
+
+    // ---- campaign mission: record the clear, then return to the realm map ----
+    if (Game.mission) {
+      const realmId = Game.mission.realm;
+      if (win && Game.meta) {
+        const arr = Game.meta.campaign.cleared[realmId] || (Game.meta.campaign.cleared[realmId] = []);
+        if (!arr.includes(Game.mission.id)) arr.push(Game.mission.id);
+        if (Game.mission.realmEnd) Game.meta.progress.wins++;
+        saveMeta(Game.meta);
+      }
+      const realmDone = win && Game.mission.realmEnd;
+      const mBody = win
+        ? `${world.killed} foes felled. +${earned} Drachma.${relicLine}` + (realmDone ? ' The realm is conquered — the road beyond opens soon!' : '')
+        : `${world.killed} foes felled before the gate broke. +${earned} Drachma. Regroup and try again — the deed stands until you prevail.`;
+      const back = () => { Game.mission = null; Game.run = null; clearRun(); cleanup(); go('map'); };
+      overlay = el('div.overlay', {}, [el('div.panel' + (win ? '.win' : '.lose'), {}, [
+        el('h2', {}, win ? (beat || 'Victory!') : 'You have fallen'),
+        el('p', {}, mBody),
+        el('div.row', {}, [el('button.btn.btn-primary', { dataset: { testid: 'btn-tomap' }, onclick: back }, win ? 'Return to the map' : 'Back to the map')]),
+      ])]);
+      s.append(overlay);
+      syncDebug({ status: world.status });
+      return;
+    }
 
     let title, body, actions;
     if (win && !lastMap) {

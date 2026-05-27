@@ -8,7 +8,7 @@ import { Game } from '../state.js';
 import { mount, screen, el } from '../ui.js';
 import { icon } from '../icons.js';
 import { artOrFallback } from '../art.js';
-import { saveMeta, loadRun, clearRun } from '../save.js';
+import { saveMeta, clearRun } from '../save.js';
 import { UPGRADES } from '../data/upgrades.js';
 import { GOD_BY_ID } from '../data/powers.js';
 import { DEFENDER_BY_ID } from '../data/defenders.js';
@@ -93,13 +93,11 @@ export function renderHub() {
       ])))
     : el('p.hub-sub', { style: { margin: '2px 0 0' } }, 'No relics yet — slay bosses and clear great deeds to claim them.');
 
-  // --- run actions ---
-  const saved = loadRun();
+  // --- actions: into the realm map (the campaign) ---
   const actions = el('div.hub-actions', {}, [
     el('button.btn.btn-ghost', { dataset: { testid: 'btn-codex' }, onclick: () => go('codex') }, 'Bestiary'),
     el('button.btn.btn-ghost', { onclick: () => go('howto') }, 'How to Play'),
-    ...(saved ? [el('button.btn.btn-ghost', { dataset: { testid: 'btn-continue' }, onclick: continueRun }, `Continue · Map ${saved.mapIndex + 1}`)] : []),
-    el('button.btn.btn-primary.btn-lg', { dataset: { testid: 'btn-begin' }, onclick: newRun }, saved ? 'New Run' : 'Begin the Defense'),
+    el('button.btn.btn-primary.btn-lg', { dataset: { testid: 'btn-begin' }, onclick: enterRealm }, 'Set out on the journey'),
   ]);
 
   s.append(
@@ -115,15 +113,8 @@ export function renderHub() {
   return mount(s);
 }
 
-function continueRun() {
-  const saved = loadRun();
-  if (!saved) return go('prepare');
-  Game.run = saved;
-  go('battle');
-}
-
-function newRun() {
+function enterRealm() {
   clearRun();
-  Game.run = { seed: (Date.now() ^ (Math.random() * 1e9)) >>> 0, mapIndex: 0, boons: [], gods: [], units: [] };
-  go('prepare');
+  Game.mission = null;
+  go('map');
 }

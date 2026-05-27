@@ -25,6 +25,17 @@ GOD_STYLE = ("cute cartoon mobile game character portrait, Greek mythology god, 
     "facing the viewer, bold black outline, flat vibrant colors, soft cel shading, majestic and characterful, "
     "centered, plain solid white background, no text")
 
+MAP_STYLE = ("illustrated antique fantasy world map, top-down cartography, painted parchment and ink, "
+    "decorative borders, mountains and rivers and coastlines, rich colour, no text, no labels")
+MAPS = {
+    "maps/earth":      "a map of ancient Greece — the blue Aegean sea dotted with islands, the Peloponnese, "
+        "mountain ranges, the isle of Crete, winding roads between cities, sunlit Mediterranean parchment",
+    "maps/underworld": "a dark map of the Greek Underworld — the winding rivers Styx and Acheron, the grey fields "
+        "of Asphodel, black caverns and the pit of Tartarus, eerie green glow, gloomy parchment",
+    "maps/olympus":    "a map of Mount Olympus rising through golden clouds, winding switchback paths climbing the "
+        "snowy slopes to a gleaming summit palace, radiant sky, lofty parchment",
+}
+
 GODS = {
     "gods/zeus":     "Zeus king of the gods, a powerful white-bearded man with a laurel crown, crackling golden lightning around him",
     "gods/poseidon": "Poseidon god of the sea, a muscular sea-green-bearded man holding a trident, teal robes, coral crown",
@@ -164,6 +175,9 @@ def run():
     print("SCENES")
     for k, (core, w, h) in SCENES.items():
         seed += 1; n += make_scene(k, core, w, h, seed); time.sleep(0.5)
+    print("MAPS")
+    for k, core in MAPS.items():
+        seed += 1; n += make_scene(k, core + ", " + MAP_STYLE, 1280, 720, seed); time.sleep(0.5)
     print("ICONS")
     seed += 1; n += make_icons(seed)
     print(f"DONE — {n} assets generated")

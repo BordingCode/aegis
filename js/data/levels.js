@@ -18,7 +18,7 @@ export const ACTS = [
 export const ROMAN = ['', 'I', 'II', 'III'];
 
 // --- Act 1, Map 1 — hand-authored, balanced (the sim regression baseline) ---
-const A1M1 = {
+export const A1M1 = {
   id: 'a1_m1', act: 1, name: 'The Dipylon Gate',
   bg: 'backgrounds/act1.webp',
   world: { w: 1280, h: 720 },
@@ -138,7 +138,7 @@ function genWaves(D, act, W, bossTier) {
   return waves;
 }
 
-function makeLevel({ id, act, name, D, scale, W, boss, mode = 'defense', target, relic, favorStart = 80, favorRate = 3.4, favorMax, reward = 20 }) {
+export function makeLevel({ id, act, name, D, scale, W, boss, mode = 'defense', target, relic, favorStart = 80, favorRate = 3.4, favorMax, reward = 20 }) {
   const tier = boss != null ? boss : (act === 1 ? 0 : act === 2 ? 1 : 3);
   const cap = favorMax != null ? favorMax : 360 + (act - 1) * 160; // later Acts let you bank more
   const lvl = {

@@ -6,7 +6,8 @@ import { RNG } from './rng.js';
 export const Game = {
   screen: 'title',        // title | hub | battle | boon | result
   rng: new RNG(),         // run-scoped seed (reset per run)
-  run: null,              // active run (in-memory only, never persisted)
+  run: null,              // active run / mission attempt (in-memory only)
+  mission: null,          // current campaign mission descriptor { realm, id, level, reward, … }
   meta: null,             // persistent meta-progression (loaded from storage)
   battle: null,           // live battle World while on the battle screen
 };

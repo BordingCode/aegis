@@ -85,13 +85,14 @@ export function renderPrepare() {
     Game.run.units = pickedUnits.slice();
     Game.run.mapIndex = Game.run.mapIndex || 0;
     Game.run.boons = Game.run.boons || [];
+    if (Game.mission) { go('battle', { level: Game.mission.level }); return; } // campaign mission
     saveRun(Game.run);
     go('battle', { level: LEVELS[Game.run.mapIndex] });
   }
 
   s.append(
     el('header.hub-bar', {}, [
-      el('button.btn.btn-ghost.btn-back', { onclick: () => go('hub') }, '←'),
+      el('button.btn.btn-ghost.btn-back', { onclick: () => go(Game.mission ? 'map' : 'hub') }, '←'),
       el('h1', {}, 'Muster your forces'),
     ]),
     el('p.hub-sub', {}, 'Choose the gods who answer your call and the warriors at your gate. The Shrine always stands.'),
