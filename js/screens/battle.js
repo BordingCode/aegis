@@ -54,6 +54,7 @@ export function renderBattle(opts = {}) {
   }
   Game.battle = world; Game.screen = 'battle';
   window.__battle = world;
+  if (world.target && world.target.kind === 'boss') markSeen(world.target.bossId); // record bosses in the codex
   // campaign missions persist via meta.campaign (the map); only the legacy linear run is resumable
   if (Game.run && !Game.mission) { if (Game.run.earned == null) Game.run.earned = 0; saveRun(Game.run); }
 

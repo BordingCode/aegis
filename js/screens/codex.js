@@ -7,10 +7,11 @@ import { mount, screen, el } from '../ui.js';
 import { icon } from '../icons.js';
 import { artOrFallback } from '../art.js';
 import { ENEMIES } from '../data/enemies.js';
+import { RELICS } from '../data/relics.js';
 import { go } from '../main.js';
 
-const ACT_OF = { shade: 1, skeleton: 1, harpy: 1, minotaur: 1, satyr: 2, cyclops: 2, griffin: 2, wraith: 3, cerberus: 3 };
-const ACT_NAMES = { 1: 'Act I · The Walls of Athens', 2: 'Act II · The Slopes of Olympus', 3: 'Act III · The Gates of Hades' };
+const ACT_OF = { shade: 1, skeleton: 1, harpy: 1, minotaur: 1, satyr: 2, cyclops: 2, griffin: 2, wraith: 3, cerberus: 3, hydra: 3, typhon: 3 };
+const ACT_NAMES = { 1: 'The Mortal Realm', 2: 'The Slopes of Olympus', 3: 'The Underworld & Beyond' };
 
 function statChip(ic, val) { return el('span.codex-stat', {}, [icon(ic, { size: 13 }), ' ' + val]); }
 
@@ -52,6 +53,17 @@ export function renderCodex() {
     groups.push(el('h2.muster-h', {}, ACT_NAMES[act]));
     groups.push(el('div.codex-grid', {}, foes.map((e) => card(e, seenSet.has(e.id)))));
   }
+
+  // relics collection (spoiler-safe: locked until earned)
+  const ownedRelics = new Set(meta.relics || []);
+  groups.push(el('h2.muster-h', {}, ['Relics ', el('span.muster-count', {}, `${ownedRelics.size}/${RELICS.length}`)]));
+  groups.push(el('div.codex-grid', {}, RELICS.map((r) => {
+    const have = ownedRelics.has(r.id);
+    return el('div.codex-card' + (have ? '' : '.is-locked'), {}, [
+      el('div.art', {}, [el('span.codex-emoji', {}, have ? '◈' : '?')]),
+      el('div.codex-body', {}, [el('b', {}, have ? r.name : '???'), el('span.codex-blurb', {}, have ? r.desc : 'Not yet claimed.')]),
+    ]);
+  })));
 
   s.append(
     el('header.hub-bar', {}, [
