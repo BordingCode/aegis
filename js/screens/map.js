@@ -7,7 +7,8 @@ import { Game } from '../state.js';
 import { mount, screen, el } from '../ui.js';
 import { icon } from '../icons.js';
 import { bgImage } from '../art.js';
-import { REALM_BY_ID, isUnlocked, realmComplete } from '../data/campaign.js';
+import { saveMeta } from '../save.js';
+import { REALM_BY_ID, REALM_ORDER, isUnlocked, realmComplete, realmUnlocked } from '../data/campaign.js';
 import { go } from '../main.js';
 
 const TYPE_ICON = { defense: 'gate', assault: 'spear', boss: 'skull' };
@@ -72,6 +73,17 @@ export function renderMap() {
   }
 
   const complete = realmComplete(realmId, cleared);
+  const idx = REALM_ORDER.indexOf(realmId);
+  const prev = idx > 0 ? REALM_ORDER[idx - 1] : null;
+  const next = idx < REALM_ORDER.length - 1 ? REALM_ORDER[idx + 1] : null;
+  const travel = (rid) => { meta.campaign.realm = rid; saveMeta(meta); go('map'); };
+
+  const foot = el('div.map-foot.realm-nav', {}, []);
+  if (prev) foot.append(el('button.btn.btn-ghost', { dataset: { testid: 'btn-realm-prev' }, onclick: () => travel(prev) }, '← ' + REALM_BY_ID[prev].name));
+  foot.append(el('span.muster-count', {}, complete ? 'Realm conquered ✓' : 'Choose your next deed'));
+  if (next && realmUnlocked(next, meta)) foot.append(el('button.btn.btn-primary', { dataset: { testid: 'btn-realm-next' }, onclick: () => travel(next) }, 'Travel to ' + REALM_BY_ID[next].name + ' →'));
+  else if (next) foot.append(el('span.muster-count', {}, 'Conquer this realm to travel onward'));
+
   s.append(
     el('header.hub-bar.map-bar', {}, [
       el('button.btn.btn-ghost.btn-back', { onclick: () => go('hub') }, '←'),
@@ -79,9 +91,7 @@ export function renderMap() {
       el('div.drachma', { title: 'Drachma' }, [icon('coin', { size: 18 }), ' ' + meta.currency]),
     ]),
     board,
-    el('p.hub-sub.map-foot', {}, complete
-      ? 'This realm is conquered. The road beyond opens soon…'
-      : 'Choose your next deed. Cleared paths light the way onward.'),
+    foot,
   );
   return mount(s);
 }

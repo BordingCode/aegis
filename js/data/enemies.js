@@ -40,6 +40,16 @@ export const ENEMIES = [
     hp: 900, speed: 46, armor: 6, flying: false, dmg: 70, atkCd: 1.0, bounty: 60, gateDmg: 7, boss: true,
     resist: { ranged: 0.65 },
     blurb: 'The three-headed hound of Hades — a wall of teeth and fury. Its hide turns arrows; hold it with melee and gods.' },
+
+  // --- realm bosses ---
+  { id: 'hydra', name: 'The Hydra', emoji: '🐉', art: 'enemies/hydra.webp', color: '#3f8a5a',
+    hp: 1200, speed: 30, armor: 5, flying: false, dmg: 50, atkCd: 1.1, bounty: 80, gateDmg: 7, boss: true,
+    resist: { ranged: 0.6 },
+    blurb: 'The many-headed serpent of Lerna. Cut one head and more may come — strike with overwhelming force.' },
+  { id: 'typhon', name: 'Typhon', emoji: '🌋', art: 'enemies/typhon.webp', color: '#7a3b5a',
+    hp: 2000, speed: 26, armor: 7, flying: false, dmg: 95, atkCd: 1.1, bounty: 200, gateDmg: 10, boss: true,
+    resist: { ranged: 0.6 },
+    blurb: 'Father of monsters, deadliest foe of the gods. Storm and fire incarnate — the last and greatest trial.' },
 ];
 
 export const ENEMY_BY_ID = Object.fromEntries(ENEMIES.map((e) => [e.id, e]));

@@ -128,6 +128,7 @@
 .map-node .node-label { font-size: 11px; font-weight: 800; color: #fff; white-space: nowrap; text-shadow: 0 1px 3px #000; background: rgba(0,0,0,.45); padding: 1px 7px; border-radius: 6px; }
 .map-node.locked .node-label { color: #aeb8c4; }
 .preview-type { color: var(--gold); font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 4px; }
+.realm-nav { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
 
 /* ---------- how-to ---------- */
 .screen.howto { display: block; background: #0e2238; min-height: 100vh; min-height: 100svh; }

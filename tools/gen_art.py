@@ -63,6 +63,9 @@ SPRITES = {
     "enemies/griffin":  "a fierce griffin, an eagle head and great feathered wings on a tawny lion body, talons bared, in flight",
     "enemies/wraith":   "a spectral undead wraith knight in a tattered black cloak and dark dented armour, glowing red eyes, a rusted broadsword",
     "enemies/cerberus": "Cerberus the three-headed hellhound, an enormous black hound with three snarling fanged heads and glowing eyes, hellish guardian",
+    # realm bosses
+    "enemies/hydra":  "the Lernaean Hydra, a huge green serpentine water beast with many long-necked dragon heads rising from a scaly coiled body, venomous fangs, fierce",
+    "enemies/typhon": "Typhon father of monsters, a colossal winged storm giant with a fierce horned head, serpent tails for legs, crackling with fire and lightning, the deadliest titan, terrifying",
 }
 SCENES = {
     "backgrounds/act1": ("ancient Athens city walls and the great Dipylon stone gate at golden hour, marble ramparts, "

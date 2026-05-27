@@ -42,4 +42,41 @@ function genericBoss(world, b, fast) {
   b.cdT = fast ? 4.0 : 7.0;
 }
 
-const BEHAVIOURS = { cerberus };
+function hydra(world, b, fast) {
+  b._beat = (b._beat || 0) + 1;
+  if (b._beat % 2 === 0) {
+    for (const lane of [1, 3]) world.spawnEnemy('skeleton', lane);
+    if (fast) world.spawnEnemy('wraith', 2);
+  } else if (!fast) {
+    b.hp = Math.min(b.hpMax, b.hp + Math.round(b.hpMax * 0.04)); // regrow heads (phase 1 only)
+    world.emit('bossSlam', { lane: 2, y: world.laneCenterY(2) });
+  } else {
+    const lane = world.rng.int(0, lanes(world) - 1);
+    world.emit('bossSlam', { lane, y: world.laneCenterY(lane) });
+    for (const u of world.units) if (!u.dead && u.lane === lane) world.damageAlly(u, 70);
+  }
+  b.cdT = fast ? 4.0 : 6.0;
+}
+
+function typhon(world, b, fast) {
+  b._beat = (b._beat || 0) + 1;
+  const m = b._beat % 3;
+  if (m === 0) {
+    for (const lane of [0, 2, 4]) world.spawnEnemy('wraith', lane);
+  } else if (m === 1) {
+    const lane = world.rng.int(0, lanes(world) - 1);
+    world.emit('bossSlam', { lane, y: world.laneCenterY(lane) });
+    const dmg = fast ? 120 : 80;
+    for (const u of world.units) if (!u.dead && u.lane === lane) world.damageAlly(u, dmg);
+    for (const d of world.defenders) if (!d.dead && d.lane === lane) world.damageAlly(d, dmg);
+  } else {
+    world.spawnEnemy('skeleton', world.rng.int(0, lanes(world) - 1));
+    world.spawnEnemy('satyr', world.rng.int(0, lanes(world) - 1));
+    if (fast) { // phase 2 — a firestorm across every lane
+      for (let l = 0; l < lanes(world); l++) { world.emit('bossSlam', { lane: l, y: world.laneCenterY(l) }); for (const u of world.units) if (!u.dead && u.lane === l) world.damageAlly(u, 50); }
+    }
+  }
+  b.cdT = fast ? 3.5 : 5.5;
+}
+
+const BEHAVIOURS = { cerberus, hydra, typhon };
