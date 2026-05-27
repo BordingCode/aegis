@@ -14,6 +14,10 @@ export const UPGRADES = [
     effect: { target: 'zeus', stat: 'dmg', op: 'mul', value: 1.4 } },
   { id: 'zeus_cd', name: 'Swift Thunder', desc: '-3s Lightning cooldown', cost: 110, icon: 'bolt',
     effect: { target: 'zeus', stat: 'cooldown', op: 'add', value: -3 } },
+  { id: 'fort_hp2', name: 'Cyclopean Walls', desc: '+20 more Fort HP', cost: 140, icon: 'gate',
+    effect: { target: 'fort', stat: 'hp', op: 'add', value: 20 } },
+  { id: 'favor_start2', name: 'Golden Hoard', desc: '+40 more starting Favor', cost: 130, icon: 'coin',
+    effect: { target: 'favor', stat: 'start', op: 'add', value: 40 } },
 ];
 
 export const UPGRADE_BY_ID = Object.fromEntries(UPGRADES.map((u) => [u.id, u]));

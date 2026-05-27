@@ -1,5 +1,5 @@
 /* Aegis service worker — network-first (fresh code online, full offline fallback). */
-const CACHE = 'aegis-v18';
+const CACHE = 'aegis-v19';
 const SHELL = [
   './',
   'index.html',
@@ -17,6 +17,7 @@ const SHELL = [
   'js/screens/title.js',
   'js/screens/hub.js',
   'js/screens/howto.js',
+  'js/screens/prepare.js',
   'js/screens/battle.js',
   'js/engine/vec.js',
   'js/engine/pool.js',
@@ -47,11 +48,20 @@ const SHELL = [
   'assets/defenders/shrine.webp',
   'assets/defenders/toxotes.webp',
   'assets/defenders/oracle.webp',
+  'assets/defenders/priestess.webp',
+  'assets/defenders/slinger.webp',
   'assets/units/hoplite.webp',
+  'assets/units/phalanx.webp',
+  'assets/units/peltast.webp',
   'assets/enemies/shade.webp',
   'assets/enemies/skeleton.webp',
   'assets/enemies/harpy.webp',
   'assets/enemies/minotaur.webp',
+  'assets/enemies/satyr.webp',
+  'assets/enemies/cyclops.webp',
+  'assets/enemies/griffin.webp',
+  'assets/enemies/wraith.webp',
+  'assets/enemies/cerberus.webp',
   'icons/favicon.svg',
   'icons/icon-192.png',
   'icons/icon-512.png',

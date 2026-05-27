@@ -10,8 +10,8 @@ import { createProjectilePool, stepProjectiles } from './projectiles.js';
 import { createSpawner, stepSpawner, startWave } from './spawner.js';
 import { ENEMY_BY_ID } from '../data/enemies.js';
 import { DEFENDER_BY_ID } from '../data/defenders.js';
-import { POWER_BY_ID } from '../data/powers.js';
-import { laneCenterY } from '../data/levels.js';
+import { POWERS, POWER_BY_GOD } from '../data/powers.js';
+import { laneCenterY, laneAtY } from '../data/levels.js';
 import { dist2 } from '../engine/vec.js';
 
 function applyMod(mods, target, stat, base) {
@@ -20,8 +20,21 @@ function applyMod(mods, target, stat, base) {
   return v;
 }
 
-export function createWorld(level, { rng, onEvent, mods: metaMods = [] } = {}) {
-  const power = POWER_BY_ID['zeus_bolt'];
+// One live power instance from its def. Zeus's dmg/cooldown pick up meta upgrades.
+function makePower(def, metaMods) {
+  const isZeus = def.god === 'zeus';
+  return {
+    def, id: def.id, god: def.god, icon: def.icon, name: def.name, cast: def.cast,
+    cooldown: isZeus ? applyMod(metaMods, 'zeus', 'cooldown', def.cooldown) : def.cooldown,
+    dmg: isZeus ? applyMod(metaMods, 'zeus', 'dmg', def.dmg) : (def.dmg || 0),
+    radius: def.radius || 0, stun: def.stun || 0, slow: def.slow || 0, slowDur: def.slowDur || 0,
+    dur: def.dur || 0, dmgMult: def.dmgMult || 1, frMult: def.frMult || 1, cdT: 0,
+  };
+}
+
+export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout } = {}) {
+  // Loadout gods become the tap-powers; default to every god (sim / back-compat).
+  const godIds = (loadout && loadout.gods && loadout.gods.length) ? loadout.gods : POWERS.map((p) => p.god);
   const world = {
     level, rng,
     fortX: level.fort.x,
@@ -30,6 +43,7 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [] } = {}) {
     // live run modifiers, mutated by boons picked between waves
     mods: { allyDmgMult: 1, fireRateMult: 1, bountyMult: 1, costMult: 1, hpMult: 1, powerDmgMult: 1, powerStunAdd: 0, powerChain: 0, godCdMult: 1, slowOnHit: 1, spawnSlow: 1 },
     boons: [],
+    armyBuff: { dmgMult: 1, frMult: 1, t: 0 }, // Ares War Cry (timed)
 
     favor: new Favor({
       start: applyMod(metaMods, 'favor', 'start', level.favor.start),
@@ -46,12 +60,7 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [] } = {}) {
     elapsed: 0, killed: 0, status: 'playing',
 
     god: { x: level.fort.x - 14, range: level.god.range, cooldown: level.god.cooldown, dmg: level.god.dmg, cdT: 0, flash: 0, boltTo: null },
-    power: {
-      def: power, radius: power.radius, stun: power.stun,
-      cooldown: applyMod(metaMods, 'zeus', 'cooldown', power.cooldown),
-      dmg: applyMod(metaMods, 'zeus', 'dmg', power.dmg),
-      cdT: 0,
-    },
+    powers: godIds.map((g) => POWER_BY_GOD[g]).filter(Boolean).map((def) => makePower(def, metaMods)),
 
     _onEvent: onEvent || null,
     emit(t, d) { if (this._onEvent) this._onEvent(t, d); },
@@ -104,6 +113,9 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [] } = {}) {
       if (p.gen) { d.gen += p.gen; this.favor.bonusRate += p.gen; }
       if (p.auraRange) d.auraRange += p.auraRange;
       if (p.auraMult) d.auraMult += p.auraMult;
+      if (p.heal) d.heal += p.heal;
+      if (p.healRange) d.healRange += p.healRange;
+      if (p.splash) d.splash += p.splash;
     },
     levelCost(d) { return d.level < (d.def.maxLevel || 10) ? d.def.cost : 0; },
     sellValue(d) { return Math.round(d.def.cost * d.level * (d.def.sellRefund || 0.5)); },
@@ -124,33 +136,50 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [] } = {}) {
       return true;
     },
 
-    // ---- power ----
-    powerReady() { return this.power.cdT <= 0; },
-    castPowerAt(x, y) {
-      if (this.power.cdT > 0) return false;
-      const dmg = this.power.dmg * this.mods.powerDmgMult;
-      const stun = this.power.stun + this.mods.powerStunAdd;
-      const r2 = this.power.radius * this.power.radius;
-      const hit = [];
-      for (const e of this.enemies) {
-        if (e.dead) continue;
-        const dx = e.x - x, dy = e.y - y;
-        if (dx * dx + dy * dy <= r2) { this.damageEnemy(e, dmg); e.stunT = Math.max(e.stunT, stun); hit.push(e); }
+    // ---- powers (one per loadout god) ----
+    powerReady(p) { return p && p.cdT <= 0; },
+    // combined ally attack-speed factor: Oracle aura is per-unit; this is the global part
+    attackSpeedMult() { return this.mods.fireRateMult * (this.armyBuff.t > 0 ? this.armyBuff.frMult : 1); },
+    castPower(p, x, y) {
+      if (!p || p.cdT > 0) return false;
+      const dmg = p.dmg * this.mods.powerDmgMult;
+      if (p.cast === 'self') {                       // Ares — army-wide timed buff
+        this.armyBuff = { dmgMult: p.dmgMult, frMult: p.frMult, t: p.dur };
+        this.emit('warcry', {});
+      } else if (p.cast === 'lane') {                // Apollo — scorch a whole lane
+        const lane = laneAtY(level, y);
+        for (const e of this.enemies) if (!e.dead && e.lane === lane) this.damageEnemy(e, dmg);
+        this.emit('sunlance', { lane, y: laneCenterY(level, lane) });
+      } else {                                       // point — Zeus (stun) / Poseidon (slow)
+        const stun = p.stun ? p.stun + this.mods.powerStunAdd : 0;
+        const r2 = p.radius * p.radius;
+        const hit = [];
+        for (const e of this.enemies) {
+          if (e.dead) continue;
+          const dx = e.x - x, dy = e.y - y;
+          if (dx * dx + dy * dy <= r2) {
+            this.damageEnemy(e, dmg);
+            if (stun) e.stunT = Math.max(e.stunT, stun);
+            if (p.slow) { e.slowMult = Math.min(e.slowMult, p.slow); e.slowT = Math.max(e.slowT, p.slowDur); }
+            hit.push(e);
+          }
+        }
+        if (this.mods.powerChain > 0) {
+          const rest = this.enemies.filter((e) => !e.dead && !hit.includes(e))
+            .sort((a, b) => ((a.x - x) ** 2 + (a.y - y) ** 2) - ((b.x - x) ** 2 + (b.y - y) ** 2));
+          for (const e of rest.slice(0, this.mods.powerChain)) { this.damageEnemy(e, dmg * 0.7); if (stun) e.stunT = Math.max(e.stunT, stun); this.emit('bolt', { x: e.x, y: e.y, radius: 38 }); }
+        }
+        this.emit('bolt', { x, y, radius: p.radius });
       }
-      if (this.mods.powerChain > 0) {
-        const rest = this.enemies.filter((e) => !e.dead && !hit.includes(e))
-          .sort((a, b) => ((a.x - x) ** 2 + (a.y - y) ** 2) - ((b.x - x) ** 2 + (b.y - y) ** 2));
-        for (const e of rest.slice(0, this.mods.powerChain)) { this.damageEnemy(e, dmg * 0.7); e.stunT = Math.max(e.stunT, stun); this.emit('bolt', { x: e.x, y: e.y, radius: 38 }); }
-      }
-      this.power.cdT = this.power.cooldown;
-      this.emit('bolt', { x, y, radius: this.power.radius });
+      p.cdT = p.cooldown;
       return true;
     },
 
     // ---- damage ----
     damageEnemy(e, dmg) {
       if (e.dead) return;
-      const real = Math.max(1, Math.round(dmg * this.mods.allyDmgMult - e.armor));
+      const buffD = this.armyBuff.t > 0 ? this.armyBuff.dmgMult : 1;
+      const real = Math.max(1, Math.round(dmg * this.mods.allyDmgMult * buffD - e.armor));
       e.hp -= real; e.hitFlash = 0.12;
       if (this.mods.slowOnHit < 1) { e.slowMult = Math.min(e.slowMult, this.mods.slowOnHit); e.slowT = Math.max(e.slowT, 1.2); }
       if (e.hp <= 0 && !e.dead) { e.dead = true; this.favor.add(Math.round(e.bounty * this.mods.bountyMult)); this.killed++; this.emit('kill', { e }); }
@@ -209,7 +238,8 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [] } = {}) {
       stepEnemies(this, dt);
       stepProjectiles(this, dt);
       this._stepGod(dt);
-      if (this.power.cdT > 0) this.power.cdT = Math.max(0, this.power.cdT - dt);
+      for (const p of this.powers) if (p.cdT > 0) p.cdT = Math.max(0, p.cdT - dt);
+      if (this.armyBuff.t > 0) this.armyBuff.t = Math.max(0, this.armyBuff.t - dt);
       if (this.gateHp <= 0) { this.status = 'lost'; this.emit('lose', {}); return; }
       if (this.spawner.spawnsDone() && this.enemies.length === 0) {
         if (this.spawner.isLastWave) { this.status = 'won'; this.emit('win', {}); }

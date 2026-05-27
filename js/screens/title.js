@@ -4,6 +4,7 @@ import { Game } from '../state.js';
 import { mount, screen, el } from '../ui.js';
 import { bgImage } from '../art.js';
 import { icon } from '../icons.js';
+import { loadRun } from '../save.js';
 import { go } from '../main.js';
 
 export function renderTitle() {
@@ -13,6 +14,7 @@ export function renderTitle() {
   bgImage(hero, 'ui/title.webp'); // gated by manifest; CSS gradient otherwise
 
   const drachma = Game.meta ? Game.meta.currency : 0;
+  const saved = loadRun();
 
   hero.append(
     el('div.title-top', {}, [
@@ -22,12 +24,13 @@ export function renderTitle() {
       el('div.title-mark', {}, [icon('laurel', { size: 34, cls: 'laurel-l' }), el('h1.logo', {}, 'AEGIS'), icon('laurel', { size: 34, cls: 'laurel-r' })]),
       el('p.tagline', {}, 'The seals of the Underworld are failing. Hold the gate.'),
       el('div.title-actions', {}, [
-        el('button.btn.btn-primary.btn-lg', { dataset: { testid: 'btn-new-run' }, onclick: () => go('hub') }, 'New Run'),
+        ...(saved ? [el('button.btn.btn-primary.btn-lg', { dataset: { testid: 'btn-continue' }, onclick: () => { Game.run = loadRun(); go('battle'); } }, `Continue · Map ${saved.mapIndex + 1}`)] : []),
+        el('button.btn' + (saved ? '.btn-ghost' : '.btn-primary.btn-lg'), { dataset: { testid: 'btn-new-run' }, onclick: () => go('hub') }, saved ? 'Hall of the Gods' : 'New Run'),
         el('button.btn.btn-ghost', { onclick: () => go('howto') }, 'How to Play'),
       ]),
     ]),
     el('div.title-foot', {}, [
-      el('span.muted', {}, 'A Greek-myth tower-defense roguelite · build 18'),
+      el('span.muted', {}, 'A Greek-myth tower-defense roguelite · build 19'),
     ]),
   );
 

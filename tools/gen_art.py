@@ -30,6 +30,17 @@ SPRITES = {
     "enemies/skeleton":  "an armoured undead skeleton warrior holding a rusty sword, white bones",
     "enemies/harpy":     "a winged harpy, a bird-woman with brown feathers and sharp claws, in flight",
     "enemies/minotaur":  "a huge muscular minotaur with bull horns and brown fur, swinging a giant axe, fierce",
+    # new units (loadout roster)
+    "defenders/priestess": "a kindly Greek priestess healer in flowing white robes, holding aloft a golden chalice radiating warm light",
+    "defenders/slinger":   "a Greek slinger skirmisher whirling a leather sling with a stone overhead, light brown tunic",
+    "units/phalanx":       "a heavily armoured Greek phalanx soldier braced behind a tall bronze tower shield, a long spear, sturdy and immovable",
+    "units/peltast":       "a light nimble Greek peltast skirmisher with a small crescent shield and a handful of javelins, mid-run, agile",
+    # new enemies (later Acts)
+    "enemies/satyr":    "a wild satyr, a horned goat-legged creature with shaggy fur swinging a knotted wooden club, feral and fast",
+    "enemies/cyclops":  "a huge one-eyed cyclops giant, brutish and muscular, a single glaring eye, hefting a massive stone club",
+    "enemies/griffin":  "a fierce griffin, an eagle head and great feathered wings on a tawny lion body, talons bared, in flight",
+    "enemies/wraith":   "a spectral undead wraith knight in a tattered black cloak and dark dented armour, glowing red eyes, a rusted broadsword",
+    "enemies/cerberus": "Cerberus the three-headed hellhound, an enormous black hound with three snarling fanged heads and glowing eyes, hellish guardian",
 }
 SCENES = {
     "backgrounds/act1": ("ancient Athens city walls and the great Dipylon stone gate at golden hour, marble ramparts, "

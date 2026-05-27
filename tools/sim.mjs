@@ -40,11 +40,12 @@ export function competent(interval = 0.4) {
     for (let l = 0; l < lanes; l++) if (enemyByLane[l].length && archLvl[l] < 3 && f >= 60) return void w.recruitFort('toxotes', l);
     // 5. keep threatened lanes blocked further out
     for (let l = 0; l < lanes; l++) if (minEnemyX(l) < 800 && unitByLane[l] < 1 && f >= 55) return void w.deployLane('hoplite', l);
-    // 6. Zeus on the densest cluster
-    if (w.powerReady() && w.enemies.length >= 3) {
-      const R = w.power.radius; let best = null, bestN = 2;
+    // 6. cast a ready point-power on the densest cluster
+    const pw = w.powers && w.powers.find((p) => p.cast === 'point' && w.powerReady(p));
+    if (pw && w.enemies.length >= 3) {
+      const R = pw.radius; let best = null, bestN = 2;
       for (const e of w.enemies) { if (e.dead) continue; let n = 0; for (const o of w.enemies) { if (o.dead) continue; const dx = o.x - e.x, dy = o.y - e.y; if (dx * dx + dy * dy <= R * R) n++; } if (n > bestN) { bestN = n; best = e; } }
-      if (best) return void w.castPowerAt(best.x, best.y);
+      if (best) return void w.castPower(pw, best.x, best.y);
     }
   };
 }
@@ -65,12 +66,13 @@ export function naive(interval = 0.5) {
 
 // ---- runner --------------------------------------------------------------
 export function run(level, strategy, label) {
-  const w = createWorld(level, { rng: new RNG(7), onEvent: () => {} });
+  // a fresh player on map 1 has only Zeus unlocked
+  const w = createWorld(level, { rng: new RNG(7), onEvent: () => {}, loadout: { gods: ['zeus'] } });
   let minFort = w.gateHp, firstLeak = null, builds = 0, deploys = 0, casts = 0;
-  const _b = w.recruitFort.bind(w), _d = w.deployLane.bind(w), _c = w.castPowerAt.bind(w);
+  const _b = w.recruitFort.bind(w), _d = w.deployLane.bind(w), _c = w.castPower.bind(w);
   w.recruitFort = (...a) => { const r = _b(...a); if (r) builds++; return r; };
   w.deployLane = (...a) => { const r = _d(...a); if (r) deploys++; return r; };
-  w.castPowerAt = (...a) => { const r = _c(...a); if (r) casts++; return r; };
+  w.castPower = (...a) => { const r = _c(...a); if (r) casts++; return r; };
   let t = 0, boonIdx = 0, boons = 0;
   for (let s = 0; (w.status === 'playing' || w.status === 'waveclear') && t < 400; s++, t += STEP) {
     if (w.status === 'waveclear') {
@@ -97,7 +99,8 @@ export function runFull(makeStrat, label = 'full-run') {
   let totalKilled = 0, mapsCleared = 0, status = 'won', boonIdx = 0;
   for (let mi = 0; mi < LEVELS.length; mi++) {
     const level = LEVELS[mi];
-    const w = createWorld(level, { rng: new RNG(7 + mi * 1013), onEvent: () => {} });
+    // a representative mid-run loadout: two gods (Zeus burst + Poseidon control)
+    const w = createWorld(level, { rng: new RNG(7 + mi * 1013), onEvent: () => {}, loadout: { gods: ['zeus', 'poseidon'] } });
     for (const id of carry) { const b = BOON_BY_ID[id]; if (b) { b.apply(w); w.boons.push(id); } }
     const strategy = makeStrat();
     let t = 0;

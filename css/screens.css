@@ -65,7 +65,24 @@
 .up-card .buy { flex: 0 0 auto; background: #e0b048; color: #3a2a07; border: none; border-radius: 8px; padding: 8px 12px; min-height: 34px; font-weight: 900; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
 .up-card .buy:disabled { background: #45413a; color: #8c8870; cursor: not-allowed; }
 .up-card .owned { color: var(--gold); font-weight: 900; font-size: 12px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
-.hub-actions { display: flex; gap: 12px; justify-content: flex-end; align-items: center; margin-top: 16px; }
+.hub-actions { display: flex; gap: 12px; justify-content: flex-end; align-items: center; margin-top: 16px; flex-wrap: wrap; }
+
+/* ---------- prepare / muster (loadout select) ---------- */
+.screen.prepare { display: block; background: #0e2238; min-height: 100vh; min-height: 100svh; }
+.muster-h { font-family: var(--font-display); font-size: 18px; margin: 14px 0 6px; color: var(--ivory); }
+.muster-h .muster-count { font-family: var(--font-ui); font-size: 12px; color: var(--gold); margin-left: 6px; font-weight: 900; }
+.muster-group { margin-bottom: 6px; }
+.muster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+.sel-card { display: flex; align-items: center; gap: 9px; background: #16395e; border: 2px solid transparent; border-radius: 10px; padding: 9px 11px; min-width: 0; cursor: pointer; }
+.sel-card .glyph { color: var(--gold); flex: 0 0 auto; }
+.sel-card .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.15; }
+.sel-card .txt b { font-size: 13px; }
+.sel-card .txt span { font-size: 11px; color: #c9c2ad; font-weight: 700; }
+.sel-card .tick { flex: 0 0 auto; opacity: 0; color: var(--gold); font-weight: 900; font-size: 16px; }
+.sel-card.is-selected { border-color: var(--gold); background: #1d4569; }
+.sel-card.is-selected .tick { opacity: 1; }
+.sel-card.is-locked { cursor: default; background: #3a3214; }
+.sel-card.is-locked .tick { opacity: 1; }
 
 /* ---------- how-to ---------- */
 .screen.howto { display: block; background: #0e2238; min-height: 100vh; min-height: 100svh; }

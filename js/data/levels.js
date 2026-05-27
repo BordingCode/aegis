@@ -93,26 +93,37 @@ const GEO = {
 };
 const LANE_ORDER = [2, 0, 4, 1, 3];
 
-// Escalating discrete waves from a difficulty index D and Act number. Shades are
-// the bulk; skeletons (armour) and harpies (flyers) ramp in; minotaurs anchor the
+// Each Act draws from its own roster, by role. Act 1 is exactly shade/skeleton/
+// harpy/minotaur (so generated Act-1 maps match the old balance). Later Acts mix
+// in the new foes — satyrs & griffins on Olympus, wraiths & Cerberus in Hades.
+const ENEMY_SETS = {
+  1: { bulk: ['shade'], armor: ['skeleton'], flyer: ['harpy'], boss: ['minotaur'] },
+  2: { bulk: ['shade', 'satyr'], armor: ['skeleton'], flyer: ['harpy', 'griffin'], boss: ['cyclops', 'minotaur'] },
+  3: { bulk: ['satyr', 'wraith'], armor: ['wraith', 'skeleton'], flyer: ['griffin'], boss: ['cerberus', 'minotaur', 'cyclops'] },
+};
+
+// Escalating discrete waves from a difficulty index D and Act number. Bulk foes are
+// the swarm; armour ramps in from wave 2, flyers from wave 3; bosses anchor the
 // last waves (more of them in later Acts).
 function genWaves(D, act, W) {
+  const set = ENEMY_SETS[act] || ENEMY_SETS[1];
+  const pick = (arr, i) => arr[i % arr.length];
   const waves = [];
   for (let w = 0; w < W; w++) {
     const wave = [];
     const last = w === W - 1;
     const heavy = w >= W - 2;
     const rot = (i) => LANE_ORDER[(w + i) % 5];
-    const shade = Math.round(7 + w * 2 + D * 1.4);
-    const skel = w >= 1 ? Math.round(2 + w * 0.7 + D * 0.7) : 0;
-    const harpy = w >= 2 ? Math.round(3 + D * 0.4) : 0;
-    const half = Math.ceil(shade / 2);
-    wave.push({ enemy: 'shade', lane: rot(0), count: half, gap: 0.5 });
-    wave.push({ enemy: 'shade', lane: rot(1), count: shade - half, gap: 0.5, delay: 1.5 });
-    if (skel) wave.push({ enemy: 'skeleton', lane: rot(2), count: skel, gap: 0.9, delay: 0.6 });
-    if (harpy) wave.push({ enemy: 'harpy', lane: rot(3), count: harpy, gap: 0.8, delay: 1 });
+    const bulk = Math.round(7 + w * 2 + D * 1.4);
+    const armor = w >= 1 ? Math.round(2 + w * 0.7 + D * 0.7) : 0;
+    const flyer = w >= 2 ? Math.round(3 + D * 0.4) : 0;
+    const half = Math.ceil(bulk / 2);
+    wave.push({ enemy: pick(set.bulk, w), lane: rot(0), count: half, gap: 0.5 });
+    wave.push({ enemy: pick(set.bulk, w + 1), lane: rot(1), count: bulk - half, gap: 0.5, delay: 1.5 });
+    if (armor) wave.push({ enemy: pick(set.armor, w), lane: rot(2), count: armor, gap: 0.9, delay: 0.6 });
+    if (flyer) wave.push({ enemy: pick(set.flyer, w), lane: rot(3), count: flyer, gap: 0.8, delay: 1 });
     const minos = last ? act : (heavy && act >= 2 ? act - 1 : 0);
-    for (let m = 0; m < minos; m++) wave.push({ enemy: 'minotaur', lane: LANE_ORDER[m % 5], count: 1, delay: 2 + m * 3 });
+    for (let m = 0; m < minos; m++) wave.push({ enemy: pick(set.boss, m), lane: LANE_ORDER[m % 5], count: 1, delay: 2 + m * 3 });
     waves.push(wave);
   }
   return waves;

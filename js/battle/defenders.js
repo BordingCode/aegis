@@ -19,9 +19,10 @@ export function makeDefender(def, lane, x, y) {
     lane, x, y, slot: 0, level: 1,
     hp: def.hp, maxHp: def.hp,
     range: def.range || 0, cooldown: def.cooldown || 0, cdT: 0, dmg: def.dmg || 0,
-    proj: def.proj || null, canHitFlying: !!def.canHitFlying,
+    splash: def.splash || 0, proj: def.proj || null, canHitFlying: !!def.canHitFlying,
     gen: def.gen || 0, fxT: 1.0,
     auraRange: def.auraRange || 0, auraMult: def.auraMult || 1,
+    heal: def.heal || 0, healRange: def.healRange || 0,
     fireRateMult: 1, fireFlash: 0, hitFlash: 0, dead: false, def,
   };
 }
@@ -51,8 +52,18 @@ export function stepDefenders(world, dt) {
       continue;
     }
     if (d.kind === 'aura') continue;
+    if (d.kind === 'heal') {           // Priestess — mends nearby wounded allies
+      const r2 = d.healRange * d.healRange;
+      const amt = d.heal * dt;
+      const mend = (t) => { if (t.dead || t === d || t.hp >= t.maxHp) return; const dx = t.x - d.x, dy = t.y - d.y; if (dx * dx + dy * dy <= r2) t.hp = Math.min(t.maxHp, t.hp + amt); };
+      for (const o of ds) mend(o);
+      for (const u of world.units) mend(u);
+      d.fxT -= dt;
+      if (d.fxT <= 0) { world.emit('heal', { x: d.x, y: d.y - 24 }); d.fxT = 1.2; }
+      continue;
+    }
     if (d.kind === 'ranged') {
-      d.cdT -= dt * d.fireRateMult * world.mods.fireRateMult;
+      d.cdT -= dt * d.fireRateMult * world.attackSpeedMult();
       if (d.cdT <= 0) {
         const target = rangedTarget(world, d);
         if (target) { world.spawnProjectile(d, target); d.cdT = d.cooldown; d.fireFlash = 0.12; }

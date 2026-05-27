@@ -16,7 +16,7 @@ export function syncDebug(extra = {}) {
   window.__gameState = {
     screen: Game.screen,
     seed: Game.rng.seed,
-    run: Game.run ? { mapIndex: Game.run.mapIndex, boons: (Game.run.boons || []).slice() } : null,
+    run: Game.run ? { mapIndex: Game.run.mapIndex, boons: (Game.run.boons || []).slice(), gods: (Game.run.gods || []).slice(), units: (Game.run.units || []).slice() } : null,
     meta: Game.meta ? { drachma: Game.meta.currency } : null,
     ...extra,
   };

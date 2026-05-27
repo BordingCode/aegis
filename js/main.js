@@ -7,6 +7,7 @@ import { mount, screen, el, hideSplash } from './ui.js';
 import { renderTitle } from './screens/title.js';
 import { renderHub } from './screens/hub.js';
 import { renderHowTo } from './screens/howto.js';
+import { renderPrepare } from './screens/prepare.js';
 import { renderBattle } from './screens/battle.js';
 
 // Screen registry. Unknown names show a stub.
@@ -14,6 +15,7 @@ const ROUTES = {
   title: renderTitle,
   hub: renderHub,
   howto: renderHowTo,
+  prepare: renderPrepare,
   battle: renderBattle,
 };
 
