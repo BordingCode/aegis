@@ -20,6 +20,17 @@ SPRITE_STYLE = ("cute cartoon mobile game character, Greek mythology, bold black
     "facing right, centered, plain solid white background, no shadow, no ground, no text")
 SCENE_STYLE = ("2D side-scrolling cartoon mobile game background art, Greek mythology, "
     "bold clean shapes, flat vibrant colours, warm Mediterranean light, detailed, no text, no characters")
+# God portraits — head-and-shoulders busts facing the viewer (for the muster + hub cards).
+GOD_STYLE = ("cute cartoon mobile game character portrait, Greek mythology god, head and shoulders bust, "
+    "facing the viewer, bold black outline, flat vibrant colors, soft cel shading, majestic and characterful, "
+    "centered, plain solid white background, no text")
+
+GODS = {
+    "gods/zeus":     "Zeus king of the gods, a powerful white-bearded man with a laurel crown, crackling golden lightning around him",
+    "gods/poseidon": "Poseidon god of the sea, a muscular sea-green-bearded man holding a trident, teal robes, coral crown",
+    "gods/ares":     "Ares god of war, a fierce stern face beneath a red-crested bronze Corinthian helmet, battle-scarred",
+    "gods/apollo":   "Apollo god of the sun, a radiant handsome youth with a golden laurel crown and a glowing sun halo behind his head",
+}
 
 SPRITES = {
     "defenders/shrine":  "a small white marble Greek shrine temple, two columns and a triangular pediment, soft golden glow",
@@ -89,14 +100,14 @@ def cutout(img):
     return out.crop(bbox) if bbox else out
 
 
-def make_sprite(path, prompt, seed):
+def make_sprite(path, prompt, seed, style=SPRITE_STYLE):
     full = os.path.join(A, path + ".webp")
     if os.path.exists(full) and os.path.getsize(full) > 2000:
         print("  skip:", path); return 1
     os.makedirs(os.path.dirname(full), exist_ok=True)
     for attempt in range(4):
         try:
-            data = fetch(prompt + ", " + SPRITE_STYLE, 768, 768, seed)
+            data = fetch(prompt + ", " + style, 768, 768, seed)
             img = Image.open(io.BytesIO(data)).convert("RGB").resize((360, 360), Image.LANCZOS)
             sprite = cutout(img)
             sprite.save(full, "WEBP", quality=85, method=6)
@@ -147,6 +158,9 @@ def run():
     print("SPRITES")
     for k, core in SPRITES.items():
         seed += 1; n += make_sprite(k, core, seed); time.sleep(0.5)
+    print("GODS")
+    for k, core in GODS.items():
+        seed += 1; n += make_sprite(k, core, seed, GOD_STYLE); time.sleep(0.5)
     print("SCENES")
     for k, (core, w, h) in SCENES.items():
         seed += 1; n += make_scene(k, core, w, h, seed); time.sleep(0.5)

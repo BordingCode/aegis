@@ -1,5 +1,5 @@
 /* Aegis service worker — network-first (fresh code online, full offline fallback). */
-const CACHE = 'aegis-v22';
+const CACHE = 'aegis-v23';
 const SHELL = [
   './',
   'index.html',
@@ -54,6 +54,10 @@ const SHELL = [
   'assets/units/hoplite.webp',
   'assets/units/phalanx.webp',
   'assets/units/peltast.webp',
+  'assets/gods/zeus.webp',
+  'assets/gods/poseidon.webp',
+  'assets/gods/ares.webp',
+  'assets/gods/apollo.webp',
   'assets/enemies/shade.webp',
   'assets/enemies/skeleton.webp',
   'assets/enemies/harpy.webp',

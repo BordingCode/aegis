@@ -84,6 +84,11 @@
 .sel-card.is-locked { cursor: default; background: #3a3214; }
 .sel-card.is-locked .tick { opacity: 1; }
 
+/* god portrait slot (muster + hub cards) — AI bust, glyph until it loads */
+.god-portrait { flex: 0 0 auto; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.22); border-radius: 10px; overflow: hidden; }
+.god-portrait .art-img { width: 100%; height: 100%; object-fit: contain; }
+.god-portrait .glyph { color: var(--gold); }
+
 /* ---------- codex / bestiary ---------- */
 .screen.codex { display: block; background: #0e2238; min-height: 100vh; min-height: 100svh; }
 .codex-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; margin-bottom: 6px; }

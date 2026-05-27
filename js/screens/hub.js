@@ -7,6 +7,7 @@
 import { Game } from '../state.js';
 import { mount, screen, el } from '../ui.js';
 import { icon } from '../icons.js';
+import { artOrFallback } from '../art.js';
 import { saveMeta, loadRun, clearRun } from '../save.js';
 import { UPGRADES } from '../data/upgrades.js';
 import { GOD_BY_ID } from '../data/powers.js';
@@ -33,10 +34,11 @@ export function renderHub() {
 
   const buyables = []; // { cost, card } — for afford-dimming
 
-  // A generic shop row: glyph + text + (buy | Owned). `owned`/`unlock` read/write meta.
-  function shopCard(testid, glyph, color, title, desc, cost, owned, unlock) {
+  // A generic shop row: glyph (or portrait) + text + (buy | Owned). `owned`/`unlock` read/write meta.
+  function shopCard(testid, glyph, color, title, desc, cost, owned, unlock, art) {
+    const glyphNode = el('span.glyph', { style: { color: color || '#f0d27a' } }, [icon(glyph || 'laurel', { size: 24 })]);
     const card = el('div.up-card' + (owned() ? '.is-owned' : ''), {}, [
-      el('span.glyph', { style: { color: color || '#f0d27a' } }, [icon(glyph || 'laurel', { size: 24 })]),
+      art ? artOrFallback(art, glyphNode, 'god-portrait') : glyphNode,
       el('div.txt', {}, [el('b', {}, title), el('span', {}, desc)]),
     ]);
     if (owned()) { card.append(el('div.owned', {}, [icon('laurel', { size: 13 }), ' Owned'])); return card; }
@@ -63,7 +65,7 @@ export function renderHub() {
   for (const u of GOD_UNLOCKS) {
     const g = GOD_BY_ID[u.id]; if (!g) continue;
     godList.append(shopCard('unlock-god-' + u.id, g.icon, '#f0d27a', `${g.name} — ${g.ability}`, g.blurb, u.cost,
-      () => meta.unlockedGods.includes(u.id), () => meta.unlockedGods.push(u.id)));
+      () => meta.unlockedGods.includes(u.id), () => meta.unlockedGods.push(u.id), g.art));
   }
 
   // --- units ---

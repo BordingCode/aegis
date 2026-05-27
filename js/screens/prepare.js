@@ -5,6 +5,7 @@
 import { Game } from '../state.js';
 import { mount, screen, el } from '../ui.js';
 import { icon } from '../icons.js';
+import { artOrFallback } from '../art.js';
 import { Sfx } from '../engine/audio.js';
 import { saveRun } from '../save.js';
 import { GOD_BY_ID, POWER_BY_GOD } from '../data/powers.js';
@@ -49,7 +50,7 @@ export function renderPrepare() {
   const godCards = unlockedGods.map((id) => {
     const g = GOD_BY_ID[id]; const pw = POWER_BY_GOD[id];
     const card = el('div.sel-card', { dataset: { testid: 'god-' + id } }, [
-      el('span.glyph', {}, [icon(g.icon, { size: 26 })]),
+      artOrFallback(g.art, el('span.glyph', {}, [icon(g.icon, { size: 26 })]), 'god-portrait'),
       el('div.txt', {}, [el('b', {}, `${g.name} — ${g.ability}`), el('span', {}, pw ? pw.blurb : '')]),
       el('span.tick', {}, '✓'),
     ]);

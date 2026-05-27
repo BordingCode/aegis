@@ -32,5 +32,5 @@ export const POWER_BY_ID = Object.fromEntries(POWERS.map((p) => [p.id, p]));
 export const POWER_BY_GOD = Object.fromEntries(POWERS.map((p) => [p.god, p]));
 
 // Display info for gods (used by the Prepare/muster screen + hub unlocks).
-export const GODS = POWERS.map((p) => ({ id: p.god, power: p.id, name: p.god[0].toUpperCase() + p.god.slice(1), icon: p.icon, ability: p.name, blurb: p.blurb }));
+export const GODS = POWERS.map((p) => ({ id: p.god, power: p.id, name: p.god[0].toUpperCase() + p.god.slice(1), icon: p.icon, art: 'gods/' + p.god + '.webp', ability: p.name, blurb: p.blurb }));
 export const GOD_BY_ID = Object.fromEntries(GODS.map((g) => [g.id, g]));
