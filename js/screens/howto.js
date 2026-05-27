@@ -12,7 +12,7 @@ const ROWS = [
   ['bolt', 'Your gods', 'Bring up to two gods to a run; each gives a tap-power on its own cooldown — Zeus’s lightning bolt, Poseidon’s slowing wave, Ares’ army-wide war cry, Apollo’s lane-scorching beam. The fort also auto-smites foes that get close.'],
   ['laurel', 'Blessings between waves', 'Clear a wave and an Olympian offers 1 of 3 blessings. They stack and last the whole run — commit to a build and snowball. Then send the next wave when you are ready.'],
   ['heart', 'The run', 'Before each run you muster a loadout — pick your gods and units (the Shrine always stands); unlock more in the Hall of the Gods. Hold map after map across three Acts — Athens, Olympus, the Gates of Hades — facing new foes as you go. Your blessings carry onward. Leave any time: your run is saved, and Continue resumes at your current map. Fall, though, and the run restarts from the first gate; only your Drachma remains.'],
-  ['skull', 'Beware', 'Enemies eat through your units — if a lane breaks they reach the wall and pick off your archers. Harpies fly over; only archers and Zeus can hit them.'],
+  ['skull', 'Counter the foe', 'Armoured foes (skeletons, wraiths, the great brutes) shrug off arrows — block and cut them down with melee troops. Flyers (harpies, griffins) soar over your line; only archers and the gods can reach them. The Slinger’s splash is best against swarms. Read what’s coming and bring the right answer — that’s why your loadout matters.'],
 ];
 
 export function renderHowTo() {

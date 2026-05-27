@@ -10,6 +10,7 @@ export function makeEnemy(def, lane) {
     side: 'enemy', defId: def.id, name: def.name, emoji: def.emoji, art: def.art, color: def.color,
     lane, x: 0, y: 0,
     hp: def.hp, maxHp: def.hp, armor: def.armor || 0, speed: def.speed, flying: !!def.flying,
+    resist: def.resist || null,
     dmg: def.dmg || 0, atkCd: def.atkCd || 1, atkT: 0,
     bounty: def.bounty, gateDmg: def.gateDmg, boss: !!def.boss,
     stunT: 0, hitFlash: 0, dead: false,

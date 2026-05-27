@@ -138,8 +138,9 @@ function genWaves(D, act, W, bossTier) {
   return waves;
 }
 
-function makeLevel({ id, act, name, D, scale, W, boss, favorStart = 80, favorRate = 3.4, reward = 20 }) {
+function makeLevel({ id, act, name, D, scale, W, boss, favorStart = 80, favorRate = 3.4, favorMax, reward = 20 }) {
   const tier = boss != null ? boss : (act === 1 ? 0 : act === 2 ? 1 : 3);
+  const cap = favorMax != null ? favorMax : 360 + (act - 1) * 160; // later Acts let you bank more
   return {
     ...GEO,
     grid: { ...GEO.grid },
@@ -148,7 +149,7 @@ function makeLevel({ id, act, name, D, scale, W, boss, favorStart = 80, favorRat
     id, act, name,
     bg: ACTS[act - 1].bg,
     enemyScale: scale,
-    favor: { start: favorStart, rate: favorRate, max: 360 },
+    favor: { start: favorStart, rate: favorRate, max: cap },
     waves: genWaves(D, act, W, tier),
     reward: { meta: reward },
   };

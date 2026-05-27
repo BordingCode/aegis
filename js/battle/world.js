@@ -176,10 +176,13 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout 
     },
 
     // ---- damage ----
-    damageEnemy(e, dmg) {
+    // type: 'ranged' | 'melee' (mortal attacks, can be resisted) | undefined (divine
+    // — god powers + the fort guardian ignore armour and resistances).
+    damageEnemy(e, dmg, type) {
       if (e.dead) return;
       const buffD = this.armyBuff.t > 0 ? this.armyBuff.dmgMult : 1;
-      const real = Math.max(1, Math.round(dmg * this.mods.allyDmgMult * buffD - e.armor));
+      const resist = (type && e.resist && e.resist[type]) ? e.resist[type] : 1;
+      const real = Math.max(1, Math.round(dmg * this.mods.allyDmgMult * buffD * resist - e.armor));
       e.hp -= real; e.hitFlash = 0.12;
       if (this.mods.slowOnHit < 1) { e.slowMult = Math.min(e.slowMult, this.mods.slowOnHit); e.slowT = Math.max(e.slowT, 1.2); }
       if (e.hp <= 0 && !e.dead) { e.dead = true; this.favor.add(Math.round(e.bounty * this.mods.bountyMult)); this.killed++; this.emit('kill', { e }); }

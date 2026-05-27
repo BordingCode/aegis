@@ -59,7 +59,7 @@ export function saveRun(run) {
   try {
     localStorage.setItem(RUN_KEY, JSON.stringify({
       v: 1, seed: run.seed, mapIndex: run.mapIndex,
-      boons: run.boons || [], gods: run.gods || [], units: run.units || [],
+      boons: run.boons || [], gods: run.gods || [], units: run.units || [], earned: run.earned || 0,
     }));
   } catch (_) { /* private mode / full */ }
 }
@@ -70,7 +70,7 @@ export function loadRun() {
     if (raw) {
       const r = JSON.parse(raw);
       if (r && r.v === 1 && Number.isInteger(r.mapIndex)) {
-        return { seed: r.seed >>> 0, mapIndex: r.mapIndex, boons: r.boons || [], gods: r.gods || [], units: r.units || [] };
+        return { seed: r.seed >>> 0, mapIndex: r.mapIndex, boons: r.boons || [], gods: r.gods || [], units: r.units || [], earned: r.earned || 0 };
       }
     }
   } catch (_) { /* corrupt → no run */ }

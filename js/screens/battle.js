@@ -53,7 +53,7 @@ export function renderBattle(opts = {}) {
   }
   Game.battle = world; Game.screen = 'battle';
   window.__battle = world;
-  if (Game.run) saveRun(Game.run); // resumable point = start of this map
+  if (Game.run) { if (Game.run.earned == null) Game.run.earned = 0; saveRun(Game.run); } // resumable point = start of this map
 
   let mode = 'idle';            // idle | placeFort | placeLane | target
   let selectedBuild = null;
@@ -281,9 +281,16 @@ export function renderBattle(opts = {}) {
     if (win) earned += (level.reward && level.reward.meta) || 0;
     if (win && lastMap) earned += 60; // run-clear bonus
 
+    // accomplishment tracking: how far this run got + the whole run's Drachma
+    const priorBest = (Game.meta && Game.meta.progress.bestLevel) || 0;
+    const reached = mapIndex + 1;
+    const newBest = reached > priorBest;
+    if (Game.run) Game.run.earned = (Game.run.earned || 0) + earned;
+    const runTotal = (Game.run && Game.run.earned) || earned;
+
     if (Game.meta) {
       Game.meta.currency += earned;
-      Game.meta.progress.bestLevel = Math.max(Game.meta.progress.bestLevel || 0, mapIndex + 1);
+      Game.meta.progress.bestLevel = Math.max(priorBest, reached);
       if (win && lastMap) Game.meta.progress.wins++;
       if (!win || lastMap) Game.meta.progress.runs++; // a run ends on death or on the final clear
       saveMeta(Game.meta);
@@ -302,14 +309,15 @@ export function renderBattle(opts = {}) {
     } else if (win && lastMap) {
       Game.run = null; clearRun();
       title = 'The gates are sealed!';
-      body = `The dead are turned back and the seals hold. Run complete — +${earned} Drachma.`;
+      body = `The dead are turned back and Hades' seals hold. You have conquered the full gauntlet — ${runTotal} Drachma earned across the whole run. Glory to the demigod!`;
       actions = [
         el('button.btn.btn-primary', { dataset: { testid: 'btn-tohub' }, onclick: () => { cleanup(); go('hub'); } }, 'Return to the Hub'),
       ];
     } else {
       Game.run = null; clearRun();
       title = 'The fort has fallen';
-      body = `${world.killed} of the dead felled before the gate broke. +${earned} Drachma. The demigod returns to the Styx — the run begins anew.`;
+      const far = `You held to ${mapLabel} — map ${reached} of ${RUN_LENGTH}` + (newBest ? ', your deepest run yet!' : '.');
+      body = `${far} ${world.killed} of the dead felled here. This run earned ${runTotal} Drachma in all — spend it in the Hall of the Gods to come back stronger.`;
       actions = [
         el('button.btn.btn-primary', { dataset: { testid: 'btn-restart' }, onclick: startFreshRun }, 'Begin a new run'),
         el('button.btn.btn-ghost', { dataset: { testid: 'btn-tohub' }, onclick: () => { cleanup(); go('hub'); } }, 'To the Hub'),

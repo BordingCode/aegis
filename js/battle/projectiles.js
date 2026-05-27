@@ -10,7 +10,7 @@ export function createProjectilePool() {
     (o, d, target) => {
       o.x = d.x; o.y = d.y - 18;
       o.target = target; o.tx = target.x; o.ty = target.y;
-      o.speed = 480; o.dmg = d.dmg; o.splash = d.splash || 0; o.proj = d.proj;
+      o.speed = 480; o.dmg = d.dmg; o.splash = d.splash || 0; o.proj = d.proj; o.type = d.dmgType || 'ranged';
     },
   );
 }
@@ -25,9 +25,9 @@ export function stepProjectiles(world, step) {
     if (len <= stepLen || len < 6) {
       if (p.splash > 0) {
         const s2 = p.splash * p.splash;
-        for (const e of world.enemies) { if (!e.dead && dist2(p.tx, p.ty, e.x, e.y) <= s2) world.damageEnemy(e, p.dmg); }
+        for (const e of world.enemies) { if (!e.dead && dist2(p.tx, p.ty, e.x, e.y) <= s2) world.damageEnemy(e, p.dmg, p.type); }
       } else if (p.target && !p.target.dead) {
-        world.damageEnemy(p.target, p.dmg);
+        world.damageEnemy(p.target, p.dmg, p.type);
       }
       p._dead = true;
       world.emit('impact', { x: p.tx, y: p.ty, splash: p.splash });

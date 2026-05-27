@@ -5,6 +5,7 @@
 export function makeUnit(def, lane, dmgMult = 1) {
   return {
     side: 'ally', defId: def.id, name: def.name, emoji: def.emoji, art: def.art, color: def.color, kind: def.kind,
+    dmgType: def.dmgType || 'melee',
     lane, x: 0, y: 0,
     hp: def.hp, maxHp: def.hp, dmg: (def.dmg || 0) * dmgMult, atkCd: def.atkCd || 0.7, atkT: 0,
     speed: def.speed || 70, contact: def.contact || 52,
@@ -32,7 +33,7 @@ export function stepUnits(world, dt) {
     const target = targetFor(world, u);
     if (target) {
       u.atkT -= dt * u.fireRateMult * world.attackSpeedMult();
-      if (u.atkT <= 0) { world.damageEnemy(target, u.dmg); u.atkT = u.atkCd; }
+      if (u.atkT <= 0) { world.damageEnemy(target, u.dmg, u.dmgType); u.atkT = u.atkCd; }
     } else {
       u.x = Math.min(rightLimit, u.x + u.speed * dt);
     }
