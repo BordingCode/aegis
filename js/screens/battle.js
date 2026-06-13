@@ -21,6 +21,7 @@ import { RELIC_BY_ID } from '../data/relics.js';
 import { saveMeta, saveRun, clearRun } from '../save.js';
 import { icon } from '../icons.js';
 import { go } from '../main.js';
+import { renderHowTo } from './howto.js';
 
 function statLine(def) {
   if (def.kind === 'favor') return `+${def.gen} Favor/sec · ${def.hp} HP`;
@@ -32,6 +33,13 @@ function statLine(def) {
 }
 
 export function renderBattle(opts = {}) {
+  // First-run gate: force the How-to once, then drop straight into this battle.
+  if (Game.meta && !Game.meta.seenIntro && !opts._afterIntro) {
+    Game.meta.seenIntro = true; saveMeta(Game.meta);
+    renderHowTo({ onDone: () => renderBattle({ ...opts, _afterIntro: true }) });
+    return;
+  }
+
   const mapIndex = (Game.run && Game.run.mapIndex) || 0;
   const level = opts.level || LEVEL_BY_ID[opts.levelId] || LEVELS[mapIndex] || LEVELS[0];
   const act = ACTS[(level.act || 1) - 1];
@@ -254,7 +262,31 @@ export function renderBattle(opts = {}) {
     items.push(el('button.btn.btn-ghost', { onclick: () => { closeMenu(); selectedDefender = null; } }, '✕'));
     menuEl = el('div.def-menu', {}, items);
     s.append(menuEl);
-    const p = worldToScreen(d.x, d.y - 56); menuEl.style.left = p.left + 'px'; menuEl.style.top = p.top + 'px';
+    positionMenu(d);
+  }
+  // Anchor the popover to the unit, but keep it on-screen: flip BELOW the unit when
+  // it would otherwise sit under the HUD/off the top, and clamp its left edge into
+  // the viewport + safe area so top-lane / edge units never push it off-screen.
+  function positionMenu(d) {
+    if (!menuEl) return;
+    const cs = getComputedStyle(document.documentElement);
+    const safeT = parseFloat(cs.getPropertyValue('--safe-t')) || 0;
+    const safeL = parseFloat(cs.getPropertyValue('--safe-l')) || 0;
+    const safeR = parseFloat(cs.getPropertyValue('--safe-r')) || 0;
+    const hudH = 56 + safeT;                          // keep clear of the top HUD bar
+    const m = 8;                                       // viewport margin
+    const r = menuEl.getBoundingClientRect();
+    const halfW = (r.width || 160) / 2;
+    const anchor = worldToScreen(d.x, d.y);
+    // vertical: prefer above the unit; flip below if that would overlap the HUD
+    const aboveTop = anchor.top - 56 - (r.height || 48);
+    const below = aboveTop < hudH;
+    menuEl.classList.toggle('below', below);
+    menuEl.style.top = (below ? anchor.top + 30 : anchor.top - 56) + 'px';
+    // horizontal: clamp the centre so the box stays inside [safeL+m, vw-safeR-m]
+    const minC = safeL + m + halfW;
+    const maxC = window.innerWidth - safeR - m - halfW;
+    menuEl.style.left = Math.max(minC, Math.min(maxC, anchor.left)) + 'px';
   }
   function closeMenu() { if (menuEl) { menuEl.remove(); menuEl = null; } }
 
@@ -271,7 +303,7 @@ export function renderBattle(opts = {}) {
     for (const { p, cd } of powerBtns) { const f = p.cooldown > 0 ? p.cdT / p.cooldown : 0; cd.style.setProperty('--cd', (f * 360) + 'deg'); }
     if (targetFill && world.target) targetFill.style.width = Math.max(0, (world.target.hp / world.target.hpMax) * 100) + '%';
     if (++affClock % 6 === 0) { refreshTray(); refreshPowers(); }
-    if (menuEl && selectedDefender) { const p = worldToScreen(selectedDefender.x, selectedDefender.y - 56); menuEl.style.left = p.left + 'px'; menuEl.style.top = p.top + 'px'; }
+    if (menuEl && selectedDefender) positionMenu(selectedDefender);
     syncDebug({ favor: Math.floor(world.favor.value), gateHp: world.gateHp, enemies: world.enemies.length, units: world.units.length, defenders: world.defenders.length, killed: world.killed, status: world.status });
   }
 
@@ -343,9 +375,18 @@ export function renderBattle(opts = {}) {
         saveMeta(Game.meta);
       }
       const realmDone = win && Game.mission.realmEnd;
+      // STAKES: a loss is a real setback. The run's accumulated blessings (and any
+      // in-run build) are forfeit — you re-muster a fresh loadout. The realm map
+      // stays as you left it (cleared deeds remain won), so it's a soft wall: you
+      // can always re-enter and try again, but never for free.
+      const lostBoons = (Game.run && Game.run.boons && Game.run.boons.length) || 0;
+      if (!win && Game.run) { Game.run.boons = []; }
+      const setback = lostBoons
+        ? ` The ${lostBoons} blessing${lostBoons === 1 ? '' : 's'} you'd gathered are scattered — you must rebuild from a fresh muster.`
+        : ' Your army is scattered — regroup and muster anew.';
       const mBody = win
         ? `${world.killed} foes felled. +${earned} Drachma.${relicLine}` + (realmDone ? ' The realm is conquered — the road beyond opens soon!' : '')
-        : `${world.killed} foes felled before the gate broke. +${earned} Drachma. Regroup and try again — the deed stands until you prevail.`;
+        : `The gate is broken. ${world.killed} foes felled. +${earned} Drachma.${setback}`;
       const back = () => { Game.mission = null; Game.run = null; clearRun(); cleanup(); go('map'); };
       overlay = el('div.overlay', {}, [el('div.panel' + (win ? '.win' : '.lose'), {}, [
         el('h2', {}, win ? (beat || 'Victory!') : 'You have fallen'),

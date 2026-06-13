@@ -15,6 +15,7 @@ export function defaultMeta() {
     relics: [],                           // permanent mythic items earned from bosses/key missions
     upgrades: {},                         // { upgradeId: true } purchased permanent upgrades
     progress: { bestLevel: 0, runs: 0, wins: 0 },
+    seenIntro: false,                     // first battle forces the How-to once
     settings: { speed: 1 },
     codex: { enemiesSeen: [], lore: [] },
     campaign: { realm: 'earth', cleared: { earth: [], underworld: [], olympus: [] } },

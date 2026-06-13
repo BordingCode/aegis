@@ -107,7 +107,11 @@
   display: flex; gap: 6px; align-items: center;
   background: rgba(13,38,62,.96); border: 2px solid var(--gold-d);
   border-radius: 14px; padding: 6px; box-shadow: var(--shadow);
+  max-width: calc(100vw - 16px); flex-wrap: wrap; justify-content: center;
 }
+/* when the unit sits near the top lane, the menu flips to sit BELOW it so it
+   never renders under the HUD or off the top edge (JS toggles .below). */
+.def-menu.below { transform: translate(-50%, 0); }
 .def-menu .btn { padding: 8px 12px; min-height: 38px; font-size: 14px; box-shadow: 0 3px 0 rgba(0,0,0,.3); }
 .def-menu .menu-max { padding: 0 10px; font-weight: 900; color: var(--gold); }
 .def-menu .menu-lvl { padding: 0 8px; font-weight: 900; color: var(--ivory); font-size: 13px; }
@@ -169,4 +173,25 @@
 @keyframes pulseGlow {
   0%, 100% { box-shadow: 0 0 0 2px rgba(240,210,122,.4), var(--shadow); }
   50% { box-shadow: 0 0 0 6px rgba(240,210,122,.55), var(--shadow); }
+}
+
+/* ---- short landscape (phones held sideways): keep HUD / power-rail / tray
+   from stacking on top of one another in the cramped vertical space ---- */
+@media (max-height: 430px) {
+  .hud-top { gap: 6px; padding: calc(4px + var(--safe-t)) calc(8px + var(--safe-r)) 4px calc(8px + var(--safe-l)); }
+  .hud-stat { padding: 3px 9px; font-size: 12px; }
+  .hud-stat .bar { width: 48px; }
+  .hud-btn { width: 34px; height: 34px; border-radius: 10px; }
+  /* power rail: smaller buttons + tighter so it clears the bottom tray */
+  .power-rail { gap: 7px; right: calc(8px + var(--safe-r)); }
+  .power-btn { width: 44px; height: 44px; border-radius: 13px; }
+  /* tray: lower-profile cards so the row stays one line */
+  .build-tray { gap: 7px; padding: 5px calc(8px + var(--safe-r)) calc(6px + var(--safe-b)) calc(8px + var(--safe-l)); }
+  .build-card { min-width: 62px; padding: 5px 6px; }
+  .build-card .glyph { font-size: 20px; }
+  .build-card .name { font-size: 10px; }
+  /* lift the between-wave button + info strip above the shorter tray */
+  .send-next { bottom: 84px; }
+  .info-strip { bottom: 84px; max-width: min(440px, 78vw); }
+  .target-bar { top: calc(34px + var(--safe-t)); width: min(360px, 56vw); }
 }

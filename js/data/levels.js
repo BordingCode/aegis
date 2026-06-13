@@ -27,7 +27,7 @@ export const A1M1 = {
   fort: { x: 178, hp: 50 },                  // enemies reaching x<=fort.x damage the fort
   spawnX: 1245,
   deployX: 190,                              // where mobile troops appear
-  god: { id: 'zeus', range: 210, cooldown: 3.0, dmg: 22 }, // fort auto-defender (last resort)
+  god: { id: 'zeus', range: 210, cooldown: 3.0, dmg: 18 }, // fort auto-defender (true last resort — won't quietly cover leaks)
   favor: { start: 80, rate: 3.4, max: 360 },
   enemyScale: 1,
   waves: [
@@ -145,7 +145,7 @@ export function makeLevel({ id, act, name, D, scale, W, boss, mode = 'defense', 
     ...GEO,
     grid: { ...GEO.grid },
     fort: { x: 178, hp: 50 },
-    god: { id: 'zeus', range: 210, cooldown: 3.0, dmg: 22 },
+    god: { id: 'zeus', range: 210, cooldown: 3.0, dmg: 18 },
     id, act, name, mode,
     bg: bg || ACTS[act - 1].bg,           // realms can pick their own backdrop…
     enemyScale: scale,

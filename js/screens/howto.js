@@ -16,16 +16,23 @@ const ROWS = [
   ['skull', 'Counter the foe', 'Armoured foes (skeletons, wraiths, the great brutes) shrug off arrows — block and cut them down with melee troops. Flyers (harpies, griffins) soar over your line; only archers and the gods can reach them. The Slinger’s splash is best against swarms. Read what’s coming and bring the right answer — that’s why your loadout matters.'],
 ];
 
-export function renderHowTo() {
+// opts.onDone: called when the player dismisses the guide (used by the first-run
+// gate to drop straight into the battle). Defaults to returning to the hub.
+export function renderHowTo(opts = {}) {
   const s = screen('howto');
+  const done = typeof opts.onDone === 'function' ? opts.onDone : () => go('hub');
+  const firstRun = !!opts.onDone;
   const rows = ROWS.map(([ic, title, body]) => el('div.howto-row', {}, [
     el('span.glyph', {}, [icon(ic, { size: 24 })]),
     el('div', {}, [el('b', {}, title), el('span', {}, body)]),
   ]));
+  const head = firstRun
+    ? [el('h1', {}, 'How to Play')]
+    : [el('button.btn.btn-ghost.btn-back', { onclick: done }, '←'), el('h1', {}, 'How to Play')];
   s.append(
-    el('div.howto-head', {}, [el('button.btn.btn-ghost.btn-back', { onclick: () => go('hub') }, '←'), el('h1', {}, 'How to Play')]),
+    el('div.howto-head', {}, head),
     el('div.howto-list', {}, rows),
-    el('button.btn.btn-primary.btn-lg', { onclick: () => go('hub') }, 'Got it'),
+    el('button.btn.btn-primary.btn-lg', { onclick: done }, firstRun ? 'To battle  ▶' : 'Got it'),
   );
   return mount(s);
 }

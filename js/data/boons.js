@@ -4,15 +4,20 @@
 
 export const BOONS = [
   { id: 'ares_edge', god: 'Ares', name: 'Edge of War', icon: 'horns', stackable: true,
-    desc: '+25% damage to all your attacks.',
-    apply: (w) => { w.mods.allyDmgMult *= 1.25; } },
+    desc: '+40% attack damage — but the all-out fury costs 12% attack speed.',
+    apply: (w) => { w.mods.allyDmgMult *= 1.4; w.mods.fireRateMult *= 0.88; } },
   { id: 'ares_frenzy', god: 'Ares', name: 'War Frenzy', icon: 'horns', stackable: true,
-    desc: '+15% attack speed for archers & troops.',
-    apply: (w) => { w.mods.fireRateMult *= 1.15; } },
+    desc: '+25% attack speed — but your units fight recklessly: −10% HP.',
+    apply: (w) => {
+      w.mods.fireRateMult *= 1.25;
+      w.mods.hpMult *= 0.9;
+      for (const d of w.defenders) { d.maxHp = Math.max(1, Math.round(d.maxHp * 0.9)); d.hp = Math.min(d.hp, d.maxHp); }
+      for (const u of w.units) { u.maxHp = Math.max(1, Math.round(u.maxHp * 0.9)); u.hp = Math.min(u.hp, u.maxHp); }
+    } },
 
   { id: 'zeus_thunder', god: 'Zeus', name: 'Thunderhead', icon: 'bolt', stackable: true,
-    desc: '+40% Lightning Strike damage and a longer stun.',
-    apply: (w) => { w.mods.powerDmgMult *= 1.4; w.mods.powerStunAdd += 0.3; } },
+    desc: '+50% Lightning damage and a longer stun — but Favor flows 15% slower.',
+    apply: (w) => { w.mods.powerDmgMult *= 1.5; w.mods.powerStunAdd += 0.3; w.favor.rateMult *= 0.85; } },
   { id: 'zeus_chain', god: 'Zeus', name: 'Chain Lightning', icon: 'bolt', stackable: true,
     desc: 'Your Lightning Strike arcs to 2 more nearby foes.',
     apply: (w) => { w.mods.powerChain += 2; } },
