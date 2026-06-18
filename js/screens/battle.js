@@ -326,6 +326,18 @@ export function renderBattle(opts = {}) {
     cleanup(); clearRun();
     go('prepare');
   }
+  // Name the dominant leaker on a loss + a one-clause tip. Data tracked in world.leaks.
+  const LEAK_TIPS = {
+    Harpy: 'flyers need archers or Zeus', Griffin: 'flyers need archers or Zeus',
+    Skeleton: 'their armour shrugs off arrows — meet them with melee',
+    Wraith: 'their armour shrugs off arrows — meet them with melee',
+    Satyr: 'they sprint — block the lane early', Shade: 'thin the swarm before it reaches the gate',
+  };
+  function leakLine() {
+    const t = world.topLeak; if (!t) return '';
+    const tip = LEAK_TIPS[t.name] || 'reinforce that lane';
+    return ` ${t.name}s broke through lane ${t.lane + 1} (×${t.count}) — ${tip}.`;
+  }
   function endBattle(kind) {
     if (ended) return; ended = true; loop.pause(); closeMenu(); selectedDefender = null; hideInfo();
     sendNextBtn.style.display = 'none';
@@ -386,7 +398,7 @@ export function renderBattle(opts = {}) {
         : ' Your army is scattered — regroup and muster anew.';
       const mBody = win
         ? `${world.killed} foes felled. +${earned} Drachma.${relicLine}` + (realmDone ? ' The realm is conquered — the road beyond opens soon!' : '')
-        : `The gate is broken. ${world.killed} foes felled. +${earned} Drachma.${setback}`;
+        : `The gate is broken. ${world.killed} foes felled.${leakLine()} +${earned} Drachma.${setback}`;
       const back = () => { Game.mission = null; Game.run = null; clearRun(); cleanup(); go('map'); };
       overlay = el('div.overlay', {}, [el('div.panel' + (win ? '.win' : '.lose'), {}, [
         el('h2', {}, win ? (beat || 'Victory!') : 'You have fallen'),
@@ -418,7 +430,7 @@ export function renderBattle(opts = {}) {
       Game.run = null; clearRun();
       title = 'The fort has fallen';
       const far = `You held to ${mapLabel} — map ${reached} of ${RUN_LENGTH}` + (newBest ? ', your deepest run yet!' : '.');
-      body = `${far} ${world.killed} of the dead felled here. This run earned ${runTotal} Drachma in all — spend it in the Hall of the Gods to come back stronger.`;
+      body = `${far} ${world.killed} of the dead felled here.${leakLine()} This run earned ${runTotal} Drachma in all — spend it in the Hall of the Gods to come back stronger.`;
       actions = [
         el('button.btn.btn-primary', { dataset: { testid: 'btn-restart' }, onclick: startFreshRun }, 'Begin a new run'),
         el('button.btn.btn-ghost', { dataset: { testid: 'btn-tohub' }, onclick: () => { cleanup(); go('hub'); } }, 'To the Hub'),

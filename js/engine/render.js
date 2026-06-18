@@ -179,6 +179,21 @@ export function renderWorld(view, world, opts = {}) {
     ctx.restore();
   }
 
+  // boss slam telegraph — a growing red warning band on the doomed lane(s) for ~0.7s
+  const boss = world.target;
+  if (boss && boss.slamT > 0 && boss.slamLanes) {
+    const p = Math.max(0, Math.min(1, 1 - boss.slamT / 0.7)); // 0 → 1 as the blow nears
+    for (const lane of boss.slamLanes) {
+      const cy = laneCenterY(level, lane), bh = lh * (0.35 + 0.55 * p);
+      ctx.save();
+      ctx.fillStyle = `rgba(214,72,59,${0.12 + 0.30 * p})`;
+      ctx.fillRect(0, cy - bh / 2, W, bh);
+      ctx.strokeStyle = `rgba(255,170,120,${0.4 + 0.5 * p})`; ctx.lineWidth = 2 + 3 * p;
+      ctx.strokeRect(0, cy - bh / 2, W, bh);
+      ctx.restore();
+    }
+  }
+
   // transient FX
   if (opts.fx) {
     for (const f of opts.fx) {

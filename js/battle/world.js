@@ -42,7 +42,8 @@ function makeTarget(level) {
   if (t.kind === 'boss') {
     const def = ENEMY_BY_ID[t.bossId] || {};
     return { kind: 'boss', bossId: t.bossId, def, art: def.art, color: def.color, name: def.name || 'Boss',
-      x: level.spawnX - 70, y, hp: t.hp, hpMax: t.hp, hitFlash: 0, cdT: 4, phase: 1 };
+      x: level.spawnX - 70, y, hp: t.hp, hpMax: t.hp, hitFlash: 0, cdT: 4, phase: 1,
+      slamT: 0, slams: null, slamLanes: null };
   }
   return { kind: 'stronghold', name: t.name || 'Stronghold', x: level.spawnX - 20, y,
     hp: t.hp, hpMax: t.hp, hitFlash: 0, resist: { ranged: 0.5 } };
@@ -76,6 +77,7 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout,
     projectiles: createProjectilePool(),
     spawner: createSpawner(level),
     elapsed: 0, killed: 0, status: 'playing',
+    leaks: {}, topLeak: null, // tally of foes that broke through (for the death screen)
 
     god: { x: level.fort.x - 14, range: level.god.range, cooldown: level.god.cooldown, dmg: level.god.dmg, cdT: 0, flash: 0, boltTo: null },
     powers: godIds.map((g) => POWER_BY_GOD[g]).filter(Boolean).map((def) => makePower(def, metaMods)),
@@ -217,7 +219,15 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout,
         this.emit('allyDown', { a });
       }
     },
-    hitGate(e) { this.gateHp = Math.max(0, this.gateHp - e.gateDmg); this.emit('gate', { e }); },
+    hitGate(e) {
+      this.gateHp = Math.max(0, this.gateHp - e.gateDmg);
+      // tally what is leaking through — used by the death screen to name the cause
+      const key = e.name || e.defId;
+      const rec = this.leaks[key] || (this.leaks[key] = { name: key, count: 0, lane: e.lane });
+      rec.count += e.gateDmg; rec.lane = e.lane;
+      if (!this.topLeak || rec.count >= this.topLeak.count) this.topLeak = rec;
+      this.emit('gate', { e });
+    },
 
     // your forces chipping the offensive target (stronghold/boss). Divine (powers) ignores
     // its resist; ranged is resisted by a stronghold (bring melee/gods to siege it).
