@@ -103,13 +103,9 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout,
 
     // ---- spawning / placement ----
     // Mark a foe as slowed, honouring the opt-in "Stubborn Foes" rung (slowResist < 1
-    // makes every slow bite less). Only the strongest active slow wins.
-    // TODO(balance): the march speed is NOT yet scaled by e.slowMult (stepEnemies still
-    // uses raw e.speed). Wiring slow into movement is a one-line change there, but it
-    // shifts campaign balance (the campaign was tuned while slows were inert) and breaks
-    // two Olympus maps (ascent/typhon) for the competent-play test — it needs a dedicated
-    // tuning pass. For now slowT is a transient STATE flag the interacting boons read
-    // (Frostbite/Conduction/Tidal Bounty), and the ascension slowResist already scales it.
+    // makes every slow bite less). Only the strongest active slow wins. While slowT>0
+    // this also scales the foe's march speed (gently — see marchSpeed in enemies.js),
+    // and the interacting boons (Frostbite/Conduction/Tidal Bounty) read the slow state.
     applySlow(e, mult, dur) {
       if (mult >= 1) return;
       const eff = 1 - (1 - mult) * this.ascension.slowResist; // resisted reduction

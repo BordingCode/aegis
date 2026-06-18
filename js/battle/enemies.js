@@ -14,10 +14,20 @@ export function makeEnemy(def, lane) {
     dmg: def.dmg || 0, atkCd: def.atkCd || 1, atkT: 0,
     bounty: def.bounty, gateDmg: def.gateDmg, boss: !!def.boss,
     // slowT>0 marks a foe as "slowed" — read by interacting boons (Frostbite,
-    // Conduction, Tidal Bounty). NOTE: the march speed itself is not yet scaled by
-    // slowMult; see TODO in world.js applySlow about wiring slow into movement.
+    // Conduction, Tidal Bounty) AND scales march speed via marchSpeed() below.
     stunT: 0, slowMult: 1, slowT: 0, hitFlash: 0, dead: false,
   };
+}
+
+// How much a slow source's speed reduction actually bites movement. The slow data
+// (e.slowMult) is shared with the boon STATE layer; we apply it to movement gently
+// so slows visibly matter without trivialising the march (a strong source like
+// Poseidon's 0.4 mult becomes a ~30% slow, not a 60% lockdown).
+const SLOW_BITE = 0.5;
+// Effective march speed for an enemy this step, honouring an active slow.
+export function marchSpeed(e) {
+  if (e.slowT > 0 && e.slowMult < 1) return e.speed * (1 - (1 - e.slowMult) * SLOW_BITE);
+  return e.speed;
 }
 
 // nearest friendly in the same lane that is to the LEFT of the enemy and within
@@ -39,14 +49,15 @@ export function stepEnemies(world, dt) {
     if (e.dead) { anyDead = true; continue; }
     if (e.hitFlash > 0) e.hitFlash -= dt;
     // Tick the slow timer so "slowed" is a transient STATE (read by the interacting
-    // boons via e.slowT>0). Movement is intentionally NOT scaled here yet — see the
-    // TODO in world.js applySlow; doing so shifts campaign balance and needs a tuning pass.
+    // boons via e.slowT>0). While active it ALSO scales march speed (gently — see
+    // marchSpeed below): slow now actually slows, and the Frost boons feed off slowT.
     if (e.slowT > 0) { e.slowT -= dt; if (e.slowT <= 0) e.slowMult = 1; }
     if (e.stunT > 0) { e.stunT -= dt; continue; }
     e.y = world.laneCenterY(e.lane);
+    const spd = marchSpeed(e);
 
     if (e.flying) {
-      e.x -= e.speed * dt;
+      e.x -= spd * dt;
       if (e.x <= world.fortX) { e.dead = true; anyDead = true; world.hitGate(e); }
       continue;
     }
@@ -55,7 +66,7 @@ export function stepEnemies(world, dt) {
       e.atkT -= dt;
       if (e.atkT <= 0) { world.damageAlly(blocker, e.dmg); e.atkT = e.atkCd; }
     } else {
-      e.x -= e.speed * dt;
+      e.x -= spd * dt;
       if (e.x <= world.fortX) { e.dead = true; anyDead = true; world.hitGate(e); }
     }
   }

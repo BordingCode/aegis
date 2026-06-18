@@ -1,5 +1,5 @@
 /* Aegis service worker — network-first (fresh code online, full offline fallback). */
-const CACHE = 'aegis-v32';
+const CACHE = 'aegis-v33';
 const SHELL = [
   './',
   'index.html',
