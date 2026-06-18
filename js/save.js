@@ -2,6 +2,8 @@
 // The active RUN is NOT saved here — death restarts the run from map 1; only
 // meta (unlocks, Drachma, permanent upgrades, codex) carries over.
 
+import { ASCENSION_MAX } from './data/ascension.js';
+
 const KEY = 'aegis_meta_v1';
 const RUN_KEY = 'aegis_run_v1';
 
@@ -9,6 +11,7 @@ export function defaultMeta() {
   return {
     v: 1,
     currency: 0,                          // Drachma — earned per run, spent in the hub
+    ascension: 0,                         // opt-in difficulty ladder (rule changes, NOT flat scaling)
     unlockedDefenders: ['shrine', 'hoplite', 'toxotes', 'oracle'], // starters; rest bought in the hub
     unlockedPowers: ['zeus_bolt'],
     unlockedGods: ['zeus'],               // gods you can bring; more bought in the hub
@@ -31,6 +34,7 @@ export function loadMeta() {
         const d = defaultMeta();
         return {
           ...d, ...m,
+          ascension: Math.max(0, Math.min(ASCENSION_MAX, m.ascension | 0)),
           unlockedDefenders: m.unlockedDefenders || d.unlockedDefenders,
           unlockedPowers: m.unlockedPowers || d.unlockedPowers,
           unlockedGods: m.unlockedGods || d.unlockedGods,

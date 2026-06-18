@@ -17,6 +17,7 @@ import { metaMods } from '../run/meta.js';
 import { LEVELS, LEVEL_BY_ID, RUN_LENGTH, ACTS, ROMAN, laneAtY } from '../data/levels.js';
 import { DEFENDERS, DEFENDER_BY_ID } from '../data/defenders.js';
 import { rollBoons, BOON_BY_ID } from '../data/boons.js';
+import { ascensionRules } from '../data/ascension.js';
 import { RELIC_BY_ID } from '../data/relics.js';
 import { saveMeta, saveRun, clearRun } from '../save.js';
 import { icon } from '../icons.js';
@@ -54,7 +55,8 @@ export function renderBattle(opts = {}) {
   let fx = []; let floats = [];
 
   const loadoutGods = (Game.run && Game.run.gods && Game.run.gods.length) ? Game.run.gods : null;
-  const world = createWorld(level, { rng: Game.rng, onEvent, mods: metaMods(Game.meta), loadout: { gods: loadoutGods }, relics: (Game.meta && Game.meta.relics) || [] });
+  const asc = ascensionRules((Game.meta && Game.meta.ascension) || 0);
+  const world = createWorld(level, { rng: Game.rng, onEvent, mods: metaMods(Game.meta), loadout: { gods: loadoutGods }, relics: (Game.meta && Game.meta.relics) || [], ascension: asc });
   // Carry the run's boons into this map: re-apply each blessing to the fresh world
   // (no units exist yet, so HP/attack mods land on everything spawned here).
   if (Game.run && Array.isArray(Game.run.boons)) {
@@ -451,7 +453,7 @@ export function renderBattle(opts = {}) {
     loop.pause(); breather = true;
     clearSelection(); closeMenu(); selectedDefender = null; armedPower = null;
     if (mode === 'target') { mode = 'idle'; hideInfo(); refreshPowers(); }
-    const offered = rollBoons(world.rng, world.boons, 3);
+    const offered = rollBoons(world.rng, world.boons, 3 + world.ascension.boonOfferDelta);
     const cards = offered.map((b) => el('button.boon-card', { dataset: { testid: 'boon-' + b.id }, onclick: () => { world.pickBoon(b); if (Game.run) { (Game.run.boons || (Game.run.boons = [])).push(b.id); saveRun(Game.run); } hideOverlay(); showBreather(); } }, [
       el('span.boon-glyph', {}, [icon(b.icon || 'laurel', { size: 30 })]),
       el('span.boon-god', {}, b.god),

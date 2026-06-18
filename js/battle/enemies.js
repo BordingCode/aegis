@@ -13,7 +13,10 @@ export function makeEnemy(def, lane) {
     resist: def.resist || null,
     dmg: def.dmg || 0, atkCd: def.atkCd || 1, atkT: 0,
     bounty: def.bounty, gateDmg: def.gateDmg, boss: !!def.boss,
-    stunT: 0, hitFlash: 0, dead: false,
+    // slowT>0 marks a foe as "slowed" — read by interacting boons (Frostbite,
+    // Conduction, Tidal Bounty). NOTE: the march speed itself is not yet scaled by
+    // slowMult; see TODO in world.js applySlow about wiring slow into movement.
+    stunT: 0, slowMult: 1, slowT: 0, hitFlash: 0, dead: false,
   };
 }
 
@@ -35,6 +38,10 @@ export function stepEnemies(world, dt) {
   for (const e of world.enemies) {
     if (e.dead) { anyDead = true; continue; }
     if (e.hitFlash > 0) e.hitFlash -= dt;
+    // Tick the slow timer so "slowed" is a transient STATE (read by the interacting
+    // boons via e.slowT>0). Movement is intentionally NOT scaled here yet — see the
+    // TODO in world.js applySlow; doing so shifts campaign balance and needs a tuning pass.
+    if (e.slowT > 0) { e.slowT -= dt; if (e.slowT <= 0) e.slowMult = 1; }
     if (e.stunT > 0) { e.stunT -= dt; continue; }
     e.y = world.laneCenterY(e.lane);
 

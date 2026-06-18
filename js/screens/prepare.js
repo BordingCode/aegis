@@ -11,6 +11,8 @@ import { saveRun } from '../save.js';
 import { GOD_BY_ID, POWER_BY_GOD } from '../data/powers.js';
 import { DEFENDER_BY_ID } from '../data/defenders.js';
 import { LEVELS } from '../data/levels.js';
+import { ASCENSION, ASCENSION_MAX, ascensionRules } from '../data/ascension.js';
+import { saveMeta } from '../save.js';
 import { go } from '../main.js';
 
 const MAX_GODS = 2;
@@ -80,6 +82,7 @@ export function renderPrepare() {
 
   function march() {
     if (pickedGods.length < 1 || pickedUnits.length < 1) return;
+    meta.ascension = ascLevel; saveMeta(meta); // lock in the opt-in difficulty for this run
     Sfx.resume(); // unlock WebAudio on this gesture so battle SFX play immediately
     Game.run.gods = pickedGods.slice();
     Game.run.units = pickedUnits.slice();
@@ -90,6 +93,29 @@ export function renderPrepare() {
     go('battle', { level: LEVELS[Game.run.mapIndex] });
   }
 
+  // --- Ascension: an OPT-IN harder game (rule changes, never auto-easier) ---
+  let ascLevel = Math.max(0, Math.min(ASCENSION_MAX, (meta.ascension | 0)));
+  const ascValue = el('b.asc-value');
+  const ascRules = el('ul.asc-rules');
+  const ascDown = el('button.btn.btn-ghost', { dataset: { testid: 'asc-down' } }, '−');
+  const ascUp = el('button.btn.btn-ghost', { dataset: { testid: 'asc-up' } }, '+');
+  function refreshAsc() {
+    ascValue.textContent = ascLevel === 0 ? 'Ascension 0 — standard' : `Ascension ${ascLevel}`;
+    ascDown.disabled = ascLevel <= 0;
+    ascUp.disabled = ascLevel >= ASCENSION_MAX;
+    ascRules.replaceChildren(...ASCENSION.filter((r) => r.tier <= ascLevel)
+      .map((r) => el('li', {}, `★ ${r.name}: ${r.desc}`)));
+    if (ascLevel === 0) ascRules.append(el('li.asc-none', {}, 'No modifiers. Climb for a tougher, fresher run.'));
+  }
+  ascDown.onclick = () => { if (ascLevel > 0) { ascLevel--; refreshAsc(); } };
+  ascUp.onclick = () => { if (ascLevel < ASCENSION_MAX) { ascLevel++; refreshAsc(); } };
+  refreshAsc();
+  const ascGroup = el('div.muster-group.asc-group', {}, [
+    el('h2.muster-h', {}, ['Ascension ', ascValue]),
+    el('div.asc-stepper', {}, [ascDown, ascUp]),
+    ascRules,
+  ]);
+
   s.append(
     el('header.hub-bar', {}, [
       el('button.btn.btn-ghost.btn-back', { onclick: () => go(Game.mission ? 'map' : 'hub') }, '←'),
@@ -98,6 +124,7 @@ export function renderPrepare() {
     el('p.hub-sub', {}, 'Choose the gods who answer your call and the warriors at your gate. The Shrine always stands.'),
     el('div.muster-group', {}, [el('h2.muster-h', {}, ['Gods ', godCount]), el('div.muster-grid', {}, godCards)]),
     el('div.muster-group', {}, [el('h2.muster-h', {}, ['Units ', unitCount]), el('div.muster-grid', {}, [shrineCard, ...unitCards])]),
+    ascGroup,
     el('div.hub-actions', {}, [goBtn]),
   );
   refresh();

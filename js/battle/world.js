@@ -49,7 +49,9 @@ function makeTarget(level) {
     hp: t.hp, hpMax: t.hp, hitFlash: 0, resist: { ranged: 0.5 } };
 }
 
-export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout, relics = [] } = {}) {
+export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout, relics = [], ascension = null } = {}) {
+  // Opt-in difficulty rules (rule changes, not flat scaling). Default = no-op.
+  const asc = ascension || { level: 0, fortHpMult: 1, slowResist: 1, boonOfferDelta: 0, enemySpeedMult: 1, enemyArmorAdd: 0 };
   // Loadout gods become the tap-powers; default to every god (sim / back-compat).
   const godIds = (loadout && loadout.gods && loadout.gods.length) ? loadout.gods : POWERS.map((p) => p.god);
   const world = {
@@ -59,8 +61,20 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout,
     fortX: level.fort.x,
     laneCenterY: (lane) => laneCenterY(level, lane),
 
-    // live run modifiers, mutated by boons picked between waves
-    mods: { allyDmgMult: 1, fireRateMult: 1, bountyMult: 1, costMult: 1, hpMult: 1, powerDmgMult: 1, powerStunAdd: 0, powerChain: 0, godCdMult: 1, slowOnHit: 1, spawnSlow: 1 },
+    // live run modifiers, mutated by boons picked between waves.
+    // The trailing group are COMBINATORIAL flags: they read other live state at a
+    // hook rather than bumping a flat number, so a build emerges from how they combine.
+    mods: {
+      allyDmgMult: 1, fireRateMult: 1, bountyMult: 1, costMult: 1, hpMult: 1,
+      powerDmgMult: 1, powerStunAdd: 0, powerChain: 0, godCdMult: 1, slowOnHit: 1, spawnSlow: 1,
+      // --- interacting boons (read other systems) ---
+      frostbite: 1,        // Frostbite: extra dmg mult applied to SLOWED foes (reads slow state)
+      conduction: false,   // Conduction: Lightning chain also leaps to every slowed foe in range
+      tithePerWall: 0,     // Bulwark Tithe: +Favor/sec per posted fort wall (reads defender count)
+      martyrHeal: 0,       // Martyr: on an ally death, heal same-lane allies by this much (reads allyDown)
+      frozenBounty: 1,     // Tidal Bounty: Favor mult when the slain foe was slowed (reads slow state)
+      aegisResonance: 0,   // Aegis Resonance: bonus fort-guardian dmg per posted wall (reads defender count)
+    },
     boons: [],
     armyBuff: { dmgMult: 1, frMult: 1, t: 0 }, // Ares War Cry (timed)
 
@@ -69,7 +83,9 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout,
       rate: applyMod(metaMods, 'favor', 'rate', level.favor.rate),
       max: level.favor.max,
     }),
-    gateHp: applyMod(metaMods, 'fort', 'hp', level.fort.hp),
+    ascension: asc,
+    // Tested Walls (asc 1): the fort opens the battle below full strength.
+    gateHp: Math.round(applyMod(metaMods, 'fort', 'hp', level.fort.hp) * asc.fortHpMult),
     gateHpMax: applyMod(metaMods, 'fort', 'hp', level.fort.hp),
     hopliteDmgMult: applyMod(metaMods, 'hoplite', 'dmg', 1),
 
@@ -86,6 +102,20 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout,
     emit(t, d) { if (this._onEvent) this._onEvent(t, d); },
 
     // ---- spawning / placement ----
+    // Mark a foe as slowed, honouring the opt-in "Stubborn Foes" rung (slowResist < 1
+    // makes every slow bite less). Only the strongest active slow wins.
+    // TODO(balance): the march speed is NOT yet scaled by e.slowMult (stepEnemies still
+    // uses raw e.speed). Wiring slow into movement is a one-line change there, but it
+    // shifts campaign balance (the campaign was tuned while slows were inert) and breaks
+    // two Olympus maps (ascent/typhon) for the competent-play test — it needs a dedicated
+    // tuning pass. For now slowT is a transient STATE flag the interacting boons read
+    // (Frostbite/Conduction/Tidal Bounty), and the ascension slowResist already scales it.
+    applySlow(e, mult, dur) {
+      if (mult >= 1) return;
+      const eff = 1 - (1 - mult) * this.ascension.slowResist; // resisted reduction
+      e.slowMult = Math.min(e.slowMult == null ? 1 : e.slowMult, eff);
+      e.slowT = Math.max(e.slowT || 0, dur);
+    },
     spawnEnemy(id, lane) {
       const def = ENEMY_BY_ID[id]; if (!def) return;
       const e = makeEnemy(def, lane); e.x = level.spawnX; e.y = laneCenterY(level, lane);
@@ -96,7 +126,10 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout,
         e.gateDmg = Math.max(1, Math.round(e.gateDmg * Math.pow(s, 0.85))); // leaks hurt more deep in the run
         e.bounty = Math.max(1, Math.round(e.bounty * Math.pow(s, 0.55)));   // economy keeps partial pace, not full
       }
-      if (this.mods.spawnSlow < 1) { e.slowMult = this.mods.spawnSlow; e.slowT = 3; }
+      // Ascension rule changes (opt-in): swifter, better-armoured host.
+      if (this.ascension.enemySpeedMult !== 1) e.speed = Math.round(e.speed * this.ascension.enemySpeedMult);
+      if (this.ascension.enemyArmorAdd) e.armor += this.ascension.enemyArmorAdd;
+      if (this.mods.spawnSlow < 1) this.applySlow(e, this.mods.spawnSlow, 3);
       this.enemies.push(e);
       this.emit('spawn', { id });
     },
@@ -182,14 +215,17 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout,
           if (dx * dx + dy * dy <= r2) {
             this.damageEnemy(e, dmg);
             if (stun) e.stunT = Math.max(e.stunT, stun);
-            if (p.slow) { e.slowMult = Math.min(e.slowMult, p.slow); e.slowT = Math.max(e.slowT, p.slowDur); }
+            if (p.slow) this.applySlow(e, p.slow, p.slowDur);
             hit.push(e);
           }
         }
-        if (this.mods.powerChain > 0) {
+        if (this.mods.powerChain > 0 || this.mods.conduction) {
           const rest = this.enemies.filter((e) => !e.dead && !hit.includes(e))
             .sort((a, b) => ((a.x - x) ** 2 + (a.y - y) ** 2) - ((b.x - x) ** 2 + (b.y - y) ** 2));
-          for (const e of rest.slice(0, this.mods.powerChain)) { this.damageEnemy(e, dmg * 0.7); if (stun) e.stunT = Math.max(e.stunT, stun); this.emit('bolt', { x: e.x, y: e.y, radius: 38 }); }
+          const arcs = new Set(rest.slice(0, this.mods.powerChain));
+          // Conduction: the bolt also leaps to EVERY slowed foe (slow + lightning = a build).
+          if (this.mods.conduction) for (const e of rest) if (e.slowT > 0) arcs.add(e);
+          for (const e of arcs) { this.damageEnemy(e, dmg * 0.7); if (stun) e.stunT = Math.max(e.stunT, stun); this.emit('bolt', { x: e.x, y: e.y, radius: 38 }); }
         }
         if (this.target && this.target.hp > 0) { const dx = this.target.x - x, dy = this.target.y - y; if (dx * dx + dy * dy <= r2) this.damageTarget(dmg); }
         this.emit('bolt', { x, y, radius: p.radius });
@@ -205,10 +241,19 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout,
       if (e.dead) return;
       const buffD = this.armyBuff.t > 0 ? this.armyBuff.dmgMult : 1;
       const resist = (type && e.resist && e.resist[type]) ? e.resist[type] : 1;
-      const real = Math.max(1, Math.round(dmg * this.mods.allyDmgMult * buffD * resist - e.armor));
+      const frozen = e.slowT > 0;
+      // Frostbite: slowed foes take amplified damage — turns your slow sources into a damage engine.
+      const frost = (frozen && this.mods.frostbite !== 1) ? this.mods.frostbite : 1;
+      const real = Math.max(1, Math.round(dmg * this.mods.allyDmgMult * buffD * resist * frost - e.armor));
       e.hp -= real; e.hitFlash = 0.12;
-      if (this.mods.slowOnHit < 1) { e.slowMult = Math.min(e.slowMult, this.mods.slowOnHit); e.slowT = Math.max(e.slowT, 1.2); }
-      if (e.hp <= 0 && !e.dead) { e.dead = true; this.favor.add(Math.round(e.bounty * this.mods.bountyMult)); this.killed++; this.emit('kill', { e }); }
+      if (this.mods.slowOnHit < 1) this.applySlow(e, this.mods.slowOnHit, 1.2);
+      if (e.hp <= 0 && !e.dead) {
+        e.dead = true;
+        // Tidal Bounty: a kill on a slowed foe pays extra Favor — feeds a frost economy.
+        const bounty = e.bounty * this.mods.bountyMult * (frozen ? this.mods.frozenBounty : 1);
+        this.favor.add(Math.round(bounty));
+        this.killed++; this.emit('kill', { e });
+      }
     },
     damageAlly(a, dmg) {
       if (a.dead) return;
@@ -216,6 +261,13 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout,
       if (a.hp <= 0 && !a.dead) {
         a.dead = true;
         if (a.kind === 'favor') this.favor.bonusRate -= a.gen; // a destroyed Shrine
+        // Martyr: a fallen ally's spirit mends the line — heal living same-lane allies.
+        if (this.mods.martyrHeal > 0) {
+          const heal = (t) => { if (t.dead || t === a || t.lane !== a.lane || t.hp >= t.maxHp) return; t.hp = Math.min(t.maxHp, t.hp + this.mods.martyrHeal); };
+          for (const d of this.defenders) heal(d);
+          for (const u of this.units) heal(u);
+          this.emit('martyr', { x: a.x, y: a.y });
+        }
         this.emit('allyDown', { a });
       }
     },
@@ -264,18 +316,34 @@ export function createWorld(level, { rng, onEvent, mods: metaMods = [], loadout,
         if (e.x <= this.fortX + g.range && e.x < bestX) { best = e; bestX = e.x; }
       }
       if (best) {
-        this.damageEnemy(best, g.dmg);
+        // Aegis Resonance: the guardian draws strength from the walls standing behind it.
+        const walls = this.mods.aegisResonance > 0 ? this.wallCount() : 0;
+        this.damageEnemy(best, g.dmg + walls * this.mods.aegisResonance);
         g.cdT = g.cooldown * this.mods.godCdMult; g.flash = 0.18; g.boltTo = { x: best.x, y: best.y };
         this.emit('godbolt', { x: best.x, y: best.y });
       }
     },
+    // count of living posted wall defenders (excludes Shrines/Oracles) — read by
+    // Bulwark Tithe (Favor) and Aegis Resonance (guardian damage).
+    wallCount() {
+      let n = 0;
+      for (const d of this.defenders) if (!d.dead && d.kind !== 'favor' && d.kind !== 'aura') n++;
+      return n;
+    },
     // ---- boons (picked between waves) ----
     pickBoon(boon) { boon.apply(this); this.boons.push(boon.id); this.emit('boon', { boon }); },
 
+    _titheRate: 0, // currently-applied Bulwark Tithe contribution to favor.bonusRate
     step(dt) {
       if (this.status !== 'playing') return;
       this.elapsed += dt;
       stepSpawner(this);
+      // Bulwark Tithe: each posted wall tithes Favor — re-derive from live wall count
+      // and fold the delta into the Shrine bonus rate (so selling a wall removes it too).
+      if (this.mods.tithePerWall > 0) {
+        const want = this.wallCount() * this.mods.tithePerWall;
+        if (want !== this._titheRate) { this.favor.bonusRate += want - this._titheRate; this._titheRate = want; }
+      }
       this.favor.update(dt);
       stepDefenders(this, dt);
       stepUnits(this, dt);

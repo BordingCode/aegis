@@ -49,12 +49,40 @@ export const BOONS = [
   { id: 'demeter_frost', god: 'Demeter', name: 'First Frost', icon: 'laurel', stackable: false,
     desc: 'Enemies enter their lane slowed for a few seconds.',
     apply: (w) => { w.mods.spawnSlow = Math.min(w.mods.spawnSlow, 0.55); } },
+
+  // ---- INTERACTING boons: each reads other live state, so they ASSEMBLE into a
+  // named build instead of nudging a number. (Combinatorial, not additive.) ----
+
+  { id: 'demeter_frostbite', god: 'Demeter', name: 'Frostbite', icon: 'laurel', stackable: true,
+    desc: 'Slowed foes take +30% damage. Pairs with any slow source (Frost, Riptide, Poseidon).',
+    apply: (w) => { w.mods.frostbite *= 1.3; } },
+
+  { id: 'zeus_conduction', god: 'Zeus', name: 'Conduction', icon: 'bolt', stackable: false,
+    desc: 'Your Lightning Strike also arcs to EVERY slowed foe nearby — electrify the frozen.',
+    apply: (w) => { w.mods.conduction = true; } },
+
+  { id: 'poseidon_tidal_bounty', god: 'Poseidon', name: 'Tidal Bounty', icon: 'coin', stackable: true,
+    desc: 'Killing a slowed foe yields +60% Favor — turn your slows into an economy.',
+    apply: (w) => { w.mods.frozenBounty *= 1.6; } },
+
+  { id: 'athena_bulwark_tithe', god: 'Athena', name: 'Bulwark Tithe', icon: 'shield', stackable: true,
+    desc: 'Each posted wall pays +0.4 Favor/sec. The more you garrison, the richer you grow.',
+    apply: (w) => { w.mods.tithePerWall += 0.4; } },
+
+  { id: 'athena_aegis_resonance', god: 'Athena', name: 'Aegis Resonance', icon: 'gate', stackable: true,
+    desc: "Your fort guardian hits +6 harder for every wall standing behind it.",
+    apply: (w) => { w.mods.aegisResonance += 6; } },
+
+  { id: 'ares_martyr', god: 'Ares', name: "Martyr's Boon", icon: 'horns', stackable: true,
+    desc: 'When an ally falls, its spirit heals +30 HP to allies in the same lane.',
+    apply: (w) => { w.mods.martyrHeal += 30; } },
 ];
 
 export const BOON_BY_ID = Object.fromEntries(BOONS.map((b) => [b.id, b]));
 
 // Roll `n` distinct offered boons, excluding non-stackable ones already owned.
+// `n` may be reduced by an opt-in Ascension rung ("Lean Offerings"); always offer >=1.
 export function rollBoons(rng, owned, n = 3) {
   const eligible = BOONS.filter((b) => b.stackable || !owned.includes(b.id));
-  return rng.shuffle(eligible).slice(0, n);
+  return rng.shuffle(eligible).slice(0, Math.max(1, n));
 }
